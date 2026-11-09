@@ -4,7 +4,19 @@
   "private": true,
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
-  "dependencies": { "@syn/gs1": "*", "@syn/rules-engine": "*", "@syn/label-extraction": "*" },
-  "devDependencies": { "vitest": "3.2.4", "typescript": "5.9.2", "@types/node": "22.18.6" }
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@syn/gs1": "*",
+    "@syn/rules-engine": "*",
+    "@syn/label-extraction": "*",
+    "@syn/inci": "*"
+  },
+  "devDependencies": {
+    "vitest": "3.2.4",
+    "typescript": "5.9.2",
+    "@types/node": "22.18.6"
+  }
 }

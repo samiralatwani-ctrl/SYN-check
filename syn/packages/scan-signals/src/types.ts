@@ -56,6 +56,17 @@ export interface ReferenceStructured {
   concentration_value?: number | null; concentration_unit?: string | null;
   shelf_life_min_months?: number | null; shelf_life_max_months?: number | null;
   batch_regex?: string | null;
+  /** Approved official ingredient lists for this variant, newest first. */
+  formula_versions?: FormulaVersion[] | null;
+}
+
+export interface FormulaVersion {
+  id: string;
+  valid_from: string | null;
+  source_url: string;
+  source_title: string | null;
+  source_date: string | null;
+  ingredients: { position: number; inci_name: string; is_active: boolean }[];
 }
 export type ReferenceVariant = LookupVariant & ReferenceStructured;
 export interface Reference { variants: ReferenceVariant[]; alerts: LookupAlert[] }

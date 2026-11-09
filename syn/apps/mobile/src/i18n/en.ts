@@ -69,6 +69,8 @@ export const en: Dict = {
     concentration: { match: 'Concentration matches the reference', mismatch: 'Concentration differs from the reference' },
     shelf_life_range: { match: 'Shelf life within the known range', mismatch: 'Shelf life outside the known range' },
     batch_format: { match: 'Batch format matches the brand pattern', mismatch: 'Batch format does not match the brand pattern' },
+    ingredients_order: { match: 'Ingredient order matches the official list', mismatch: 'Some ingredients are in a different order than the official list (may be legitimate)' },
+    ingredients_content: { match: 'Ingredients match the official list', mismatch: 'Ingredients differ from the official list' },
     gs1_vs_printed: { match: 'Printed batch matches the encoded code', mismatch: 'Printed batch differs from the code encoded on the same pack' },
   },
   steps: {

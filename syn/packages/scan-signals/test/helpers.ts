@@ -10,7 +10,8 @@ const date = (iso: string | null, confidence = 0.95) => ({
 const none = { value: null, raw_text: null, confidence: 0, unreadable_reason: 'not_present' as const };
 
 /** TEST_ label extraction builder (synthetic). */
-export function label(p: { brand?: string | null; name?: string | null; batch?: string | null; batchConf?: number; mfg?: string | null; exp?: string | null }): LabelExtraction {
+export function label(p: { brand?: string | null; name?: string | null; batch?: string | null; batchConf?: number; mfg?: string | null; exp?: string | null;
+  ingredients?: string; ingredientsConf?: number; truncated?: boolean }): LabelExtraction {
   return {
     schema_version: '1.0',
     image_quality: { usable: true, issues: [] },
@@ -21,7 +22,9 @@ export function label(p: { brand?: string | null; name?: string | null; batch?: 
       manufacture_date: date(p.mfg ?? null), expiry_date: date(p.exp ?? null), pao_months: none,
       barcode_digits: text(null), gs1_element_string: text(null),
     },
-    ingredients: { status: 'not_visible', raw_text: null, items: [], list_truncated: false, confidence: 0 },
+    ingredients: p.ingredients
+      ? { status: 'read', raw_text: p.ingredients, items: [], list_truncated: !!p.truncated, confidence: p.ingredientsConf ?? 0.95 }
+      : { status: 'not_visible', raw_text: null, items: [], list_truncated: false, confidence: 0 },
     registration_numbers: [],
   };
 }

@@ -1,7 +1,8 @@
 import type { ScannedCode } from '@syn/gs1';
-import { readableValue, type LabelExtraction } from '@syn/label-extraction';
+import { compareLists, parseIngredientList } from '@syn/inci';
+import { MIN_CONFIDENCE, readableValue, type LabelExtraction } from '@syn/label-extraction';
 import type { Evidence, RegulatoryClass, ReferenceStatus, ScanInput, Signal, Source } from '@syn/rules-engine';
-import type { LookupAlert, Reference, ReferenceVariant } from './types';
+import type { FormulaVersion, LookupAlert, Reference, ReferenceVariant } from './types';
 
 /**
  * Builds rules-engine input from whatever the user scanned: a barcode, a label photo, or both.
@@ -113,7 +114,11 @@ export function buildScan(b: ScanBuildInput): ScanBuild {
     }
     compareQuantity('size', readableValue(f.size), variant?.size_value, variant?.size_unit, signals, readable);
     compareQuantity('concentration', readableValue(f.concentration), variant?.concentration_value, variant?.concentration_unit, signals, readable);
-    if (f && b.label!.extraction.ingredients.status === 'read' && b.label!.extraction.ingredients.confidence >= 0.85) readable.add('ingredients');
+    const ing = b.label!.extraction.ingredients;
+    if (ing.status === 'read' && ing.confidence >= MIN_CONFIDENCE && !ing.list_truncated) {
+      readable.add('ingredients');
+      if (variant) signals.push(...ingredientSignals(ing, variant));
+    }
   }
 
   // ---------------------------------------------------------------- dates
@@ -215,4 +220,41 @@ function compareAlertDates(a: LookupAlert, mfg?: string, exp?: string): NonNulla
   const same = (p: string[] | null) => !!p && p[0] === mine[0] && p[1] === mine[1];
   const datesEqual = same(toMonths(a.counterfeit_dates)) ? 'counterfeit' : same(toMonths(a.genuine_dates)) ? 'genuine' : 'neither';
   return { alertKind: 'copied_genuine_batch', datesEqual, datesReadable: true };
+}
+
+/**
+ * Ingredient comparison against the newest approved official list of the same variant (CLAUDE.md §5.4).
+ * Order-only -> minor; content matching an older official version -> minor (reformulation);
+ * other content changes -> by rule (active substance -> critical). Perfumes: ingredients weigh less (§8).
+ */
+function ingredientSignals(ing: LabelExtraction['ingredients'], variant: ReferenceVariant): Signal[] {
+  const versions = variant.formula_versions ?? [];
+  if (!versions.length) return [];
+  const readList = ing.raw_text ? parseIngredientList(ing.raw_text).items
+    : [...ing.items].sort((a, b) => a.position - b.position).map((i) => i.name_as_printed);
+  if (readList.length < 2) return [];
+  const list = (v: FormulaVersion) => [...v.ingredients].sort((a, b) => a.position - b.position).map((i) => i.inci_name);
+  const actives = (v: FormulaVersion) => new Set(v.ingredients.filter((i) => i.is_active).map((i) => i.inci_name));
+  const [latest, ...older] = versions;
+  const c = compareLists(readList, list(latest), actives(latest));
+  const ev: Evidence = { found: readList.join(', '), reference: list(latest).join(', '), sourceUrl: latest.source_url,
+    sourceTitle: latest.source_title ?? undefined, lastVerified: latest.source_date ?? undefined };
+  const fragrance = variant.category === 'fragrance';
+  const out: Signal[] = [];
+  if (c.sameSet) {
+    out.push({ type: 'ingredients_content', outcome: 'match', source: 'ocr', evidence: ev });
+    out.push({ type: 'ingredients_order', outcome: c.sameOrder ? 'match' : 'mismatch', source: 'ocr',
+      evidence: { ...ev, found: c.sameOrder ? ev.found : `${c.moved.join(', ')}` } });
+    return out;
+  }
+  const older_ = older.find((v) => compareLists(readList, list(v), actives(v)).sameSet);
+  out.push({
+    type: 'ingredients_content', outcome: 'mismatch', source: 'ocr',
+    severityOverride: fragrance && !c.activeChanged ? 'minor' : undefined,
+    // A list identical to an older official version is a legitimate reformulation, whatever changed since.
+    ingredients: { activeChanged: !older_ && c.activeChanged, matchesOlderFormulaVersion: !!older_, nonActiveDiffCount: c.nonActiveDiffCount },
+    evidence: { ...ev, found: [c.added.length ? `+ ${c.added.join(', ')}` : '', c.removed.length ? `− ${c.removed.join(', ')}` : ''].filter(Boolean).join(' · '),
+      ...(older_ ? { reference: list(older_).join(', '), sourceUrl: older_.source_url, lastVerified: older_.source_date ?? undefined } : {}) },
+  });
+  return out;
 }

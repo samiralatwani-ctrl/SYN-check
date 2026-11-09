@@ -6,11 +6,13 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "node scripts/sync-edge-shared.mjs --check && npm run test -w @syn/gs1 -w @syn/rules-engine -w @syn/label-extraction -w @syn/scan-signals -w @syn/mobile",
+    "test": "node scripts/sync-edge-shared.mjs --check && npm run test -w @syn/gs1 -w @syn/rules-engine -w @syn/inci -w @syn/label-extraction -w @syn/scan-signals -w @syn/mobile",
     "method:build": "npm run build:method -w @syn/rules-engine",
-    "edge:sync": "node scripts/sync-edge-shared.mjs"
+    "edge:sync": "node scripts/sync-edge-shared.mjs",
+    "inci:formula": "NODE_USE_ENV_PROXY=1 tsx tools/inci/formula.mts"
   },
   "devDependencies": {
-    "postgres": "^3.4.7"
+    "postgres": "^3.4.7",
+    "tsx": "^4.20.5"
   }
 }

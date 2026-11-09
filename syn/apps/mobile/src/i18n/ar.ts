@@ -90,6 +90,8 @@ export const ar = {
     concentration: { match: 'التركيز يطابق المرجع', mismatch: 'التركيز يختلف عن المرجع' },
     shelf_life_range: { match: 'مدة الصلاحية ضمن المدى المعروف', mismatch: 'مدة الصلاحية خارج المدى المعروف للمنتج' },
     batch_format: { match: 'صيغة رقم التشغيلة تطابق نمط الشركة', mismatch: 'صيغة رقم التشغيلة لا تطابق نمط الشركة' },
+    ingredients_order: { match: 'ترتيب المكونات يطابق القائمة الرسمية', mismatch: 'ترتيب بعض المكونات يختلف عن القائمة الرسمية (قد يكون مشروعاً)' },
+    ingredients_content: { match: 'المكونات تطابق القائمة الرسمية', mismatch: 'المكونات تختلف عن القائمة الرسمية' },
     gs1_vs_printed: { match: 'رقم التشغيلة المطبوع يطابق الرمز المشفّر', mismatch: 'رقم التشغيلة المطبوع يختلف عن الرمز المشفّر على العبوة نفسها' },
   } as Record<string, Partial<Record<'match' | 'mismatch' | 'unavailable', string>>>,
   steps: {
