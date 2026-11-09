@@ -13,7 +13,7 @@ def sev(sig):
     if s=="by_rule":
         if t=="alert_batch":
             a=sig["alert"]
-            if a["alert_kind"]=="fake_batch" or a["dates_equal"]=="counterfeit" or (a["dates_equal"]=="neither" and a["dates_readable"]): s="critical"
+            if a["alert_kind"] in ("fake_batch","banned_batch") or a["dates_equal"]=="counterfeit" or (a["dates_equal"]=="neither" and a["dates_readable"]): s="critical"
             else: s="major"
         else:
             i=sig["ingredients"]

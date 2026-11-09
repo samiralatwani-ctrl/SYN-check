@@ -1,0 +1,12 @@
+{
+  "name": "syn",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test -w @syn/gs1 -w @syn/rules-engine -w @syn/mobile",
+    "method:build": "npm run build:method -w @syn/rules-engine"
+  }
+}

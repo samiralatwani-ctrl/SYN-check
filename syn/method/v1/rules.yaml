@@ -54,6 +54,7 @@ signals:
 
 alert_rule:                       # batch printed == batch in alert_items for same product
   - { when: { alert_kind: fake_batch }, then: critical }
+  - { when: { alert_kind: banned_batch }, then: critical }   # authority banned this specific batch (e.g. TİTCK lot list)
   - { when: { dates_equal: counterfeit }, then: critical }
   - { when: { dates_equal: neither, dates_readable: true }, then: critical }
   - { when: { dates_equal: genuine }, then: major }   # batch known to be copied; cannot tell apart

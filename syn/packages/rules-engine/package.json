@@ -1,0 +1,17 @@
+{
+  "name": "@syn/rules-engine",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build:method": "node scripts/build-method.mjs",
+    "test": "node scripts/build-method.mjs --check && vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4",
+    "yaml": "2.8.1"
+  }
+}

@@ -104,9 +104,11 @@ def test_store_provenance_unchanged_and_removed(conn):
         [('04670220302107', 'all_batches', dt.date(2026, 10, 1))]
 
 
-def test_titck_hidden_from_public_and_not_published(conn):
+def test_titck_raw_tables_hidden_from_public(conn):
+    # Owner decision D-021 (update): facts are published through lookup_gtin(); the raw schema
+    # (company names, original pages) stays staff-only regardless.
     store(conn, page([ROW_A]))
-    assert q(conn, 'select publish_enabled from titck.settings') == [(False,)]
+    assert q(conn, 'select publish_enabled, decided_by from titck.settings') == [(True, 'owner')]
     with conn.transaction():
         q(conn, 'set local role anon')
         with pytest.raises(psycopg.errors.InsufficientPrivilege):

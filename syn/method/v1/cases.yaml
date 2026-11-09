@@ -277,3 +277,11 @@ cases:
     signals:
       - { type: alert_product_all_batches, outcome: mismatch, source: ocr, user_confirmed: false }
     expect: { verdict: suspect, step: S1_critical }
+
+  - id: TEST_C29
+    title: "DataMatrix batch equals a batch the authority banned (no dates involved) -> red"
+    context: { reference_status: not_found, regulatory_class: cosmetic }
+    readable: [gtin, batch]
+    signals:
+      - { type: alert_batch, outcome: mismatch, source: scanner, alert: { alert_kind: banned_batch, dates_equal: neither, dates_readable: false } }
+    expect: { verdict: mismatch, step: S1_critical }

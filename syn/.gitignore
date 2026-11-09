@@ -9,3 +9,7 @@ __pycache__/
 # Real import files contain seller names and stay out of git (D-018). Put them in data/ locally.
 data/
 *.xlsx
+.expo/
+dist/
+web-build/
+apps/mobile/.env
