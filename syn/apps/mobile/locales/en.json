@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "SYN Check",
+  "NSCameraUsageDescription": "SYN uses the camera to read barcodes and photograph the label to compare it with the official reference. Photos are not stored without your consent.",
+  "NSPhotoLibraryUsageDescription": "SYN uses the photo you choose only to read the label and does not store it without your consent."
+}

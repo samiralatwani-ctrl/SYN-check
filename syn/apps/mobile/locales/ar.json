@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "SYN افحص",
+  "NSCameraUsageDescription": "يستخدم SYN الكاميرا لقراءة الباركود وتصوير الملصق ومقارنته بالمرجع الرسمي. لا تُحفظ الصور دون موافقتك.",
+  "NSPhotoLibraryUsageDescription": "يستخدم SYN الصورة التي تختارها لقراءة الملصق فقط، ولا يحفظها دون موافقتك."
+}

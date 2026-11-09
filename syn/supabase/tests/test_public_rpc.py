@@ -129,3 +129,18 @@ def test_explore_and_report_contacts_hide_sellers(conn):
     assert [v['external_ref'] for v in e['verified']] == ['TEST_1']
     (c,), = anon(conn, "select report_contacts('TEST_1')")
     assert c['brand'] is None and 'TEST_SELLER' not in str(c)
+
+
+def test_delete_my_data_removes_only_own_rows(conn):
+    a, b = '00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1'
+    _user(conn, a); _user(conn, b)
+    with conn.cursor() as cur:
+        cur.execute("insert into method_versions (version, status, rules, rules_sha256) values ('TEST_v', 'rc', '{}', 'TEST_sha')")
+    for u in (a, b):
+        (sid,), = as_user(conn, u, "insert into scans (user_id, verdict, method_version, method_sha256) values (%s, 'minor', 'TEST_v', 'TEST_sha') returning id", u)
+        as_user(conn, u, "insert into reports (scan_id, user_id, recipients) values (%s, %s, '{}')", sid, u)
+    (res,), = as_user(conn, a, 'select delete_my_data()')
+    assert res == {'reports': 1, 'scans': 1, 'usage_log': 0}
+    assert as_user(conn, b, 'select count(*) from scans') == [(1,)]
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        anon(conn, 'select delete_my_data()')

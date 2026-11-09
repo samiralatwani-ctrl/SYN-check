@@ -32,6 +32,8 @@ export interface ReferenceRepo {
   productReference(externalRef: string): Promise<Reference>;
   reportContacts(externalRef: string | null): Promise<ReportContacts>;
   explore(): Promise<ExploreData>;
+  /** Deletes the current user's scans, reports and usage log on the server (no-op if never signed in). */
+  deleteMyData(): Promise<{ reports: number; scans: number; usage_log: number } | null>;
   /** Stores the scan and the report (signed-in or anonymous user; RLS limits rows to their owner). */
   saveReport(input: SaveReportInput): Promise<SavedReport>;
   /** Server-side label reading (the vision API key never reaches the app). */

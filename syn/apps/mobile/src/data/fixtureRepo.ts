@@ -51,6 +51,7 @@ export const fixtureRepo: ReferenceRepo = {
     return { alerts: TEST_FILLER_REF.alerts, agents: [], verified: [{ external_ref: 'TEST_IQB-9002', official_name: 'TEST_ Filler ULTRA', brand: 'TEST_BRAND', category: 'filler', regulatory_class: 'medical_device' }] };
   },
   async saveReport() { return { scanId: 'TEST_scan', reportId: 'TEST_report' }; },
+  async deleteMyData() { return null; },
   async resolveProductName(brand, name): Promise<NameMatch[]> {
     const key = `${brand ?? ''} ${name}`.toLowerCase();
     return key.includes('test_ filler ultra') ? [{ external_ref: 'TEST_IQB-9002', official_name: 'TEST_ Filler ULTRA', verification_status: 'verified' }] : [];

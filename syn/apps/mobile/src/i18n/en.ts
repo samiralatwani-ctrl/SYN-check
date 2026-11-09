@@ -44,6 +44,13 @@ export const en: Dict = {
     title: 'Explore', alerts: 'Latest regulatory alerts', agents: 'Authorised agents', verified: 'Verified products',
     allBatches: 'All batches', batch: 'Batch', source: 'Source', more: 'Show more', notOfficial: 'Not officially available',
   },
+  privacy: {
+    title: 'Privacy', photos: 'The label photo is sent to our server to be read by AI and deleted right after; it is not stored. We do not ask for your name or e-mail.',
+    stored: 'Your checks are stored only if you send a report; then the check and the report are kept for review.',
+    policy: 'Privacy policy', corrections: 'Corrections and neutrality policy', contact: 'Contact us',
+    delete: 'Delete my data from the server', deleteConfirm: 'Tap again to confirm', deleted: 'Your data was deleted:', nothing: 'No data is stored for this device.',
+    deleteError: 'Could not delete. Try again later.', reports: 'reports', scans: 'checks',
+  },
   status: { verified: 'Verified', candidate_unverified: 'Unverified candidate', retired: 'Retired' },
   verdict: {
     match: { title: 'Matches the reference', body: 'Everything checked matches the documented product. This does not guarantee authenticity; buying from the authorised agent is the strongest guarantee.' },

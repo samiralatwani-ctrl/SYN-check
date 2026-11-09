@@ -22,6 +22,13 @@ export function createSupabaseRepo(url: string, anonKey: string): ReferenceRepo 
     productReference: (externalRef) => rpc<Reference>('product_reference', { p_external_ref: externalRef }),
     reportContacts: (ref) => rpc<ReportContacts>('report_contacts', { p_external_ref: ref ?? '' }),
     explore: () => rpc<ExploreData>('explore', {}),
+    async deleteMyData() {
+      const { data } = await sb.auth.getSession();
+      if (!data.session) return null;                     // nothing was ever stored for this device
+      const res = await rpc<{ reports: number; scans: number; usage_log: number }>('delete_my_data', {});
+      await sb.auth.signOut();
+      return res;
+    },
     async saveReport({ scan, report }: SaveReportInput) {
       await ensureSession();
       const { data: u } = await sb.auth.getUser();
