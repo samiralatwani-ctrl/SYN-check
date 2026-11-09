@@ -1,0 +1,262 @@
+# Reference test cases for method v1. All identifiers are TEST_ data.
+# Each case: context + signals -> expected verdict (and key reason / step).
+# Signal defaults: outcome=match, confidence=1.0, source=db, user_confirmed=false.
+# readable: the readable fields (counted toward min_readable_fields).
+
+cases:
+  - id: TEST_C01
+    title: "Valid barcode, not in DB -> gray (phase 2 acceptance)"
+    context: { reference_status: not_found, regulatory_class: cosmetic }
+    readable: [gtin, product_name]
+    signals:
+      - { type: barcode_checksum, source: scanner }
+      - { type: barcode_lookup, outcome: unavailable }
+    expect: { verdict: insufficient, step: S2_no_reference }
+
+  - id: TEST_C02
+    title: "Candidate (unverified) record, everything matches -> never green"
+    context: { reference_status: candidate_unverified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+    expect: { verdict: insufficient, step: S2_no_reference }
+
+  - id: TEST_C03
+    title: "Verified cosmetic, barcode + name + size match -> green"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+    expect: { verdict: match, step: S6_match }
+
+  - id: TEST_C04
+    title: "Alert batch with counterfeit dates, user confirmed the read -> red (phase 3 acceptance)"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, batch, manufacture_date, expiry_date]
+    signals:
+      - { type: barcode_lookup }
+      - { type: alert_batch, outcome: mismatch, source: ocr, user_confirmed: true, alert: { alert_kind: copied_genuine_batch, dates_equal: counterfeit, dates_readable: true } }
+    expect: { verdict: mismatch, step: S1_critical }
+
+  - id: TEST_C05
+    title: "Same as C04 but user did not confirm the OCR read -> orange, never red from an unconfirmed read"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, batch, manufacture_date, expiry_date]
+    signals:
+      - { type: barcode_lookup }
+      - { type: alert_batch, outcome: mismatch, source: ocr, user_confirmed: false, alert: { alert_kind: copied_genuine_batch, dates_equal: counterfeit, dates_readable: true } }
+    expect: { verdict: suspect, step: S1_critical }
+
+  - id: TEST_C06
+    title: "Alert batch but dates equal the genuine dates -> orange (copied batch, indistinguishable)"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, batch, manufacture_date, expiry_date]
+    signals:
+      - { type: barcode_lookup }
+      - { type: alert_batch, outcome: mismatch, source: ocr, user_confirmed: true, alert: { alert_kind: copied_genuine_batch, dates_equal: genuine, dates_readable: true } }
+    expect: { verdict: suspect, step: S4_major }
+
+  - id: TEST_C07
+    title: "Expiry before manufacture, confirmed -> red even if product not in DB"
+    context: { reference_status: not_found, regulatory_class: cosmetic }
+    readable: [manufacture_date, expiry_date]
+    signals:
+      - { type: dates_order, outcome: mismatch, source: ocr, user_confirmed: true }
+    expect: { verdict: mismatch, step: S1_critical }
+
+  - id: TEST_C08
+    title: "Concentration differs from verified reference -> red"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, concentration, batch]
+    signals:
+      - { type: barcode_lookup }
+      - { type: concentration, outcome: mismatch, source: ocr, user_confirmed: true }
+    expect: { verdict: mismatch, step: S1_critical }
+
+  - id: TEST_C09
+    title: "Concentration differs from a CANDIDATE reference -> ignored, gray"
+    context: { reference_status: candidate_unverified, regulatory_class: medical_device }
+    readable: [gtin, product_name, concentration]
+    signals:
+      - { type: barcode_lookup }
+      - { type: concentration, outcome: mismatch, source: ocr, user_confirmed: true }
+    expect: { verdict: insufficient, step: S2_no_reference }
+
+  - id: TEST_C10
+    title: "Ingredient order differs only -> yellow (phase 4 acceptance)"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size, ingredients]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+      - { type: ingredients_order, outcome: mismatch, source: ocr }
+    expect: { verdict: minor, step: S5_minor }
+
+  - id: TEST_C11
+    title: "Other market edition -> yellow"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+      - { type: market_variant, outcome: mismatch }
+    expect: { verdict: minor, step: S5_minor }
+
+  - id: TEST_C12
+    title: "Size on label differs from GTIN's reference size -> orange"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, outcome: mismatch, source: ocr }
+    expect: { verdict: suspect, step: S4_major }
+
+  - id: TEST_C13
+    title: "Only packaging (experimental) differs -> yellow, never red (phase 6 acceptance)"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+      - { type: packaging_similarity, outcome: mismatch, source: model, severity_override: critical }
+    expect: { verdict: minor, step: S5_minor }
+
+  - id: TEST_C14
+    title: "Experimental signals alone, nothing else read -> gray"
+    context: { reference_status: verified, regulatory_class: fragrance }
+    readable: []
+    signals:
+      - { type: packaging_similarity, outcome: mismatch, source: model }
+      - { type: print_quality, outcome: mismatch, source: model }
+    expect: { verdict: insufficient, step: S3_too_little_read }
+
+  - id: TEST_C15
+    title: "Alert batch matched but batch read with low confidence -> signal dropped, medical needs batch -> gray"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, concentration]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: concentration, source: ocr }
+      - { type: alert_batch, outcome: mismatch, source: ocr, confidence: 0.6, user_confirmed: true, alert: { alert_kind: copied_genuine_batch, dates_equal: counterfeit, dates_readable: true } }
+    expect: { verdict: insufficient, step: S7_default }
+
+  - id: TEST_C16
+    title: "Only the barcode was read (1 field) -> gray"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin]
+    signals:
+      - { type: barcode_lookup }
+    expect: { verdict: insufficient, step: S3_too_little_read }
+
+  - id: TEST_C17
+    title: "Invalid check digit -> barcode unavailable, product not resolved -> gray"
+    context: { reference_status: not_found, regulatory_class: cosmetic }
+    readable: [product_name, size]
+    signals:
+      - { type: barcode_checksum, outcome: unavailable, source: scanner }
+    expect: { verdict: insufficient, step: S2_no_reference }
+
+  - id: TEST_C18
+    title: "Medical device, all match but expiry unreadable -> gray with 'أظهر تاريخ الانتهاء'"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, concentration, batch]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: concentration, source: ocr }
+      - { type: batch_present, source: ocr }
+      - { type: alert_checked }
+      - { type: dates_order, outcome: unavailable }
+    expect: { verdict: insufficient, step: S7_default }
+
+  - id: TEST_C19
+    title: "Medical device, everything required matches -> green"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, concentration, batch, manufacture_date, expiry_date]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: concentration, source: ocr }
+      - { type: batch_present, source: ocr }
+      - { type: alert_checked }
+      - { type: dates_order, source: ocr }
+    expect: { verdict: match, step: S6_match }
+
+  - id: TEST_C20
+    title: "Major + minor together -> orange"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size, ingredients]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, outcome: mismatch, source: ocr }
+      - { type: ingredients_order, outcome: mismatch, source: ocr }
+    expect: { verdict: suspect, step: S4_major }
+
+  - id: TEST_C21
+    title: "Critical (confirmed) + major -> red"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, concentration]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, outcome: mismatch, source: ocr }
+      - { type: concentration, outcome: mismatch, source: ocr, user_confirmed: true }
+    expect: { verdict: mismatch, step: S1_critical }
+
+  - id: TEST_C22
+    title: "DataMatrix batch contradicts printed batch -> orange"
+    context: { reference_status: verified, regulatory_class: medical_device }
+    readable: [gtin, product_name, batch]
+    signals:
+      - { type: barcode_lookup }
+      - { type: gs1_vs_printed, outcome: mismatch, source: scanner }
+    expect: { verdict: suspect, step: S4_major }
+
+  - id: TEST_C23
+    title: "Bought via social media, all matches -> green + caution reason (decided: warning only)"
+    context: { reference_status: verified, regulatory_class: cosmetic, purchase_channel: social_media }
+    readable: [gtin, product_name, size]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+    expect: { verdict: match, step: S6_match, annotations_include: [social_media_caution] }
+
+  - id: TEST_C24
+    title: "Ingredients differ but match an older verified formula version -> yellow"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size, ingredients]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+      - { type: ingredients_content, outcome: mismatch, source: ocr, ingredients: { matches_older_formula_version: true } }
+    expect: { verdict: minor, step: S5_minor }
+
+  - id: TEST_C25
+    title: "Active ingredient changed (confirmed) -> red"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, ingredients]
+    signals:
+      - { type: barcode_lookup }
+      - { type: ingredients_content, outcome: mismatch, source: ocr, user_confirmed: true, ingredients: { active_changed: true } }
+    expect: { verdict: mismatch, step: S1_critical }
+
+  - id: TEST_C26
+    title: "Expired but everything matches -> green + safety banner (decided: banner only)"
+    context: { reference_status: verified, regulatory_class: cosmetic }
+    readable: [gtin, product_name, size, expiry_date]
+    signals:
+      - { type: barcode_lookup }
+      - { type: product_name, source: ocr }
+      - { type: size, source: ocr }
+      - { type: expired, outcome: mismatch, source: ocr, severity_override: safety_flag }
+    expect: { verdict: match, step: S6_match, annotations_include: [expired_banner] }

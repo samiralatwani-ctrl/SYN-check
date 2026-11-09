@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://syn.app/schemas/label-extraction/v1.json",
+  "title": "SYN label extraction v1",
+  "description": "Output of the label-reading step. The model only transcribes what is visible. It never infers, completes, or corrects a value, and it never judges authenticity. An unreadable field has value null and a reason. Confidence below the method threshold is treated as unreadable by the rules engine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "image_quality", "languages_detected", "fields", "ingredients", "registration_numbers", "extractor"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+
+    "image_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["usable", "issues"],
+      "properties": {
+        "usable": { "type": "boolean" },
+        "issues": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["blur", "glare", "low_light", "cropped", "too_far", "angle", "batch_area_not_visible", "dates_not_visible", "ingredients_not_visible"] },
+          "description": "Drives live capture guidance (e.g. too_far -> 'قرّب', batch_area_not_visible -> 'أظهر رقم التشغيلة')."
+        }
+      }
+    },
+
+    "languages_detected": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["ar", "en", "fr", "tr", "ku", "de", "it", "es", "ko", "other"] }
+    },
+
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["brand_name", "product_name", "size", "concentration", "manufacturer_name", "manufacturer_address", "batch", "manufacture_date", "expiry_date", "pao_months", "barcode_digits", "gs1_element_string"],
+      "properties": {
+        "brand_name": { "$ref": "#/$defs/textField" },
+        "product_name": { "$ref": "#/$defs/textField" },
+        "size": { "$ref": "#/$defs/quantityField" },
+        "concentration": { "$ref": "#/$defs/quantityField" },
+        "manufacturer_name": { "$ref": "#/$defs/textField" },
+        "manufacturer_address": { "$ref": "#/$defs/textField" },
+        "batch": {
+          "allOf": [{ "$ref": "#/$defs/textField" }],
+          "description": "Exact characters as printed. Do not fix O/0 or I/1 ambiguity; report it in ambiguous_characters."
+        },
+        "manufacture_date": { "$ref": "#/$defs/dateField" },
+        "expiry_date": { "$ref": "#/$defs/dateField" },
+        "pao_months": {
+          "allOf": [{ "$ref": "#/$defs/baseField" }],
+          "properties": { "value": { "type": ["integer", "null"], "minimum": 1, "maximum": 120 } },
+          "description": "Period-after-opening symbol (e.g. 12M)."
+        },
+        "barcode_digits": {
+          "allOf": [{ "$ref": "#/$defs/textField" }],
+          "description": "Human-readable digits under the barcode, if visible. Used only to cross-check the scanner, never as a substitute for a failed check digit."
+        },
+        "gs1_element_string": {
+          "allOf": [{ "$ref": "#/$defs/textField" }],
+          "description": "Human-readable GS1 text such as (01)...(17)...(10)..., if printed."
+        }
+      }
+    },
+
+    "ingredients": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "raw_text", "items", "confidence"],
+      "properties": {
+        "status": { "enum": ["read", "partially_read", "not_visible", "unreadable"] },
+        "raw_text": { "type": ["string", "null"] },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["position", "name_as_printed", "confidence"],
+            "properties": {
+              "position": { "type": "integer", "minimum": 1 },
+              "name_as_printed": { "type": "string", "minLength": 1 },
+              "declared_concentration": { "type": ["string", "null"] },
+              "confidence": { "$ref": "#/$defs/confidence" }
+            }
+          },
+          "description": "In printed order. INCI normalization happens later in packages/inci, not in the model."
+        },
+        "list_truncated": { "type": "boolean", "default": false },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+
+    "registration_numbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label_as_printed", "number", "confidence"],
+        "properties": {
+          "label_as_printed": { "type": "string", "description": "e.g. 'Reg. No.', 'رقم التسجيل', 'CE 0459'" },
+          "number": { "type": "string" },
+          "confidence": { "$ref": "#/$defs/confidence" }
+        }
+      }
+    },
+
+    "extractor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "model", "prompt_version", "extracted_at"],
+      "properties": {
+        "engine": { "enum": ["on_device", "server_vision"] },
+        "model": { "type": "string" },
+        "prompt_version": { "type": "string" },
+        "extracted_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+
+  "$defs": {
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+
+    "baseField": {
+      "type": "object",
+      "required": ["value", "raw_text", "confidence", "unreadable_reason"],
+      "properties": {
+        "raw_text": { "type": ["string", "null"], "description": "Exact text as printed, including language and punctuation." },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "unreadable_reason": {
+          "type": ["string", "null"],
+          "enum": [null, "not_present", "not_visible", "blurred", "glare", "cropped", "ambiguous", "low_confidence"]
+        },
+        "language": { "type": ["string", "null"] }
+      },
+      "if": { "properties": { "value": { "type": "null" } } },
+      "then": { "properties": { "unreadable_reason": { "type": "string" } } },
+      "else": { "properties": { "unreadable_reason": { "type": "null" } } }
+    },
+
+    "textField": {
+      "allOf": [{ "$ref": "#/$defs/baseField" }],
+      "properties": {
+        "value": { "type": ["string", "null"] },
+        "ambiguous_characters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["index", "candidates"],
+            "properties": {
+              "index": { "type": "integer", "minimum": 0 },
+              "candidates": { "type": "array", "items": { "type": "string", "maxLength": 1 }, "minItems": 2 }
+            }
+          }
+        }
+      }
+    },
+
+    "quantityField": {
+      "allOf": [{ "$ref": "#/$defs/baseField" }],
+      "properties": {
+        "value": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["amount", "unit"],
+          "properties": {
+            "amount": { "type": "number", "exclusiveMinimum": 0 },
+            "unit": { "enum": ["ml", "l", "g", "kg", "mg", "mg/ml", "%", "U", "fl_oz", "oz", "syringe_count", "other"] },
+            "unit_as_printed": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "dateField": {
+      "allOf": [{ "$ref": "#/$defs/baseField" }],
+      "properties": {
+        "value": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["iso", "precision"],
+          "properties": {
+            "iso": { "type": "string", "pattern": "^\\d{4}-\\d{2}(-\\d{2})?$" },
+            "precision": { "enum": ["day", "month"] }
+          }
+        },
+        "format_ambiguous": {
+          "type": "boolean",
+          "default": false,
+          "description": "True when e.g. 03/04/2027 could be DD/MM or MM/DD. In that case value MUST be null and unreadable_reason = 'ambiguous'."
+        },
+        "marker_as_printed": { "type": ["string", "null"], "description": "e.g. 'EXP', 'Use by', the hourglass/factory symbol, 'تاريخ الانتهاء'" }
+      }
+    }
+  }
+}

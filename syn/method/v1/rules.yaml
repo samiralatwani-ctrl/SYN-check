@@ -1,0 +1,124 @@
+# SYN fusion rules — method v1 (release candidate 1: owner decisions of 2026-11-09 applied)
+# Source of truth for the rules engine. On publish, this file is copied verbatim
+# into method_versions.rules with its SHA-256, and every scan stores the version.
+#
+# Design: the verdict is decided by SEVERITY, in a fixed order of steps.
+# Weights do not decide the verdict in v1; they only rank reasons on screen and
+# are recorded for later calibration. This keeps every verdict explainable as
+# "rule X fired because signal Y".
+
+version: v1
+status: rc1
+
+verdicts: [mismatch, suspect, minor, match, insufficient]
+#          red       orange   yellow  green  gray
+
+thresholds:
+  min_confidence: 0.85            # below this a signal becomes outcome=unavailable
+  min_readable_fields: 2
+  ingredients_minor_max_diff: 2   # non-active ingredients added/removed; above this -> major
+
+readable_fields:                  # what counts toward min_readable_fields
+  [gtin, product_name, size, concentration, batch, manufacture_date, expiry_date, ingredients]
+
+# ---------------------------------------------------------------------------
+# Signal catalogue. outcome is one of: match | mismatch | unavailable.
+# severity applies only when outcome = mismatch.
+# source: scanner | ocr | db | user | model
+# needs_verified_ref: the signal compares against reference data, so it is
+#   ignored if the resolved reference is not 'verified'.
+# ---------------------------------------------------------------------------
+signals:
+  barcode_checksum:        { severity: none,     needs_verified_ref: false, weight: 0,   note: "invalid check digit => outcome unavailable + 'أعد المسح'; never a mismatch" }
+  barcode_lookup:          { severity: none,     needs_verified_ref: false, weight: 0,   note: "context only: resolves reference_status" }
+  product_name:            { severity: major,    needs_verified_ref: true,  weight: 3 }
+  size:                    { severity: major,    needs_verified_ref: true,  weight: 3 }
+  market_variant:          { severity: minor,    needs_verified_ref: true,  weight: 1 }
+  concentration:           { severity: critical, needs_verified_ref: true,  weight: 5 }
+  active_substance:        { severity: critical, needs_verified_ref: true,  weight: 5 }
+  registration_number:     { severity: major,    needs_verified_ref: true,  weight: 3, weight_medical: 5, note: "never required for match; if an Iraqi registration exists it is compared first (evidence priority), then other countries" }
+  dates_order:             { severity: critical, needs_verified_ref: false, weight: 5,   note: "expiry <= manufacture" }
+  shelf_life_range:        { severity: major,    needs_verified_ref: true,  weight: 3 }
+  batch_format:            { severity: major,    needs_verified_ref: true,  weight: 2,   note: "only emitted if the brand regex has an official source" }
+  gs1_vs_printed:          { severity: major,    needs_verified_ref: false, weight: 3,   note: "DataMatrix GTIN/batch/expiry contradicts printed text on the same pack" }
+  ingredients_order:       { severity: minor,    needs_verified_ref: true,  weight: 1 }
+  ingredients_content:     { severity: by_rule,  needs_verified_ref: true,  weight: 2,   note: "see ingredients_rule" }
+  alert_batch:             { severity: by_rule,  needs_verified_ref: false, weight: 5, weight_medical: 6, note: "see alert_rule" }
+  packaging_similarity:    { severity: minor,    needs_verified_ref: true,  weight: 0.5, experimental: true }
+  print_quality:           { severity: minor,    needs_verified_ref: false, weight: 0.5, experimental: true }
+  batch_present:           { severity: none,     needs_verified_ref: false, weight: 0,   note: "batch read with sufficient confidence" }
+  alert_checked:           { severity: none,     needs_verified_ref: false, weight: 0,   note: "alerts table was queried for this product+batch" }
+  purchase_channel:        { severity: info,     needs_verified_ref: false, weight: 0 }
+  expired:                 { severity: safety_flag, needs_verified_ref: false, weight: 0, note: "decided: banner only, verdict unchanged" }
+
+alert_rule:                       # batch printed == batch in alert_items for same product
+  - { when: { alert_kind: fake_batch }, then: critical }
+  - { when: { dates_equal: counterfeit }, then: critical }
+  - { when: { dates_equal: neither, dates_readable: true }, then: critical }
+  - { when: { dates_equal: genuine }, then: major }   # batch known to be copied; cannot tell apart
+  - { when: { dates_readable: false }, then: major }
+
+ingredients_rule:
+  - { when: { active_changed: true }, then: critical }
+  - { when: { matches_older_formula_version: true }, then: minor }
+  - { when: { non_active_diff_count_lte: ingredients_minor_max_diff }, then: minor }
+  - { otherwise: true, then: major }
+
+# Decided 2026-11-09: approved as proposed. Registration number is NOT required.
+# What must be positively MATCHED (not just absent of mismatch) for 'match'.
+required_for_match:
+  cosmetic:        [barcode_lookup, product_name, size]
+  fragrance:       [barcode_lookup, product_name, size, batch_present]
+  medical_device:  [barcode_lookup, product_name, concentration, batch_present, alert_checked, dates_order]
+  medicine:        [barcode_lookup, product_name, concentration, batch_present, alert_checked, dates_order]
+
+# ---------------------------------------------------------------------------
+# Evaluation steps — first step that returns wins.
+# ---------------------------------------------------------------------------
+steps:
+  - id: S0_normalize
+    do:
+      - "signal.confidence < min_confidence  => outcome = unavailable, reason 'غير مقروء بثقة كافية'"
+      - "signal.experimental                 => severity capped at minor"
+      - "signal.needs_verified_ref and reference_status != verified => signal ignored"
+
+  - id: S1_critical
+    if: "any mismatch with severity critical"
+    then: mismatch
+    guard: >
+      If every critical mismatch derives from OCR (source=ocr) and the user has not
+      confirmed the read value on screen (user_confirmed=false), downgrade to 'suspect'
+      with reason 'تأكد من القيمة المقروءة'. A wrong OCR read must never produce red.
+
+  - id: S2_no_reference
+    if: "reference_status in [not_found, candidate_unverified]"
+    then: insufficient
+    reasons: { not_found: "المنتج غير موجود في القاعدة الموثّقة", candidate_unverified: "بيانات المنتج مرشحة ولم توثّق بعد" }
+
+  - id: S3_too_little_read
+    if: "count(readable_fields with confidence >= min_confidence) < min_readable_fields"
+    then: insufficient
+
+  - id: S4_major
+    if: "any mismatch with severity major"
+    then: suspect
+
+  - id: S5_minor
+    if: "any mismatch with severity minor"
+    then: minor
+
+  - id: S6_match
+    if: "all required_for_match[regulatory_class or category] have outcome match"
+    then: match
+    always_add_reason: "التطابق لا يثبت الأصالة. الضمان الأقوى هو الشراء من الوكيل المعتمد."
+
+  - id: S7_default
+    then: insufficient
+    reasons: ["list each required field that is unavailable, e.g. 'أظهر تاريخ الانتهاء'"]
+
+# Reasons that are added regardless of verdict
+annotations:
+  - "purchase_channel == social_media => caution reason only; verdict never changes (decided)"
+  - "regulatory_class in [medical_device, medicine] => 'يُستخدم فقط من طبيب مختص'; no usage advice"
+  - "expired == true => safety banner 'منتهي الصلاحية — لا تستخدمه'; verdict unchanged (decided)"
+  - "GS1 prefix is never shown as country of origin"
