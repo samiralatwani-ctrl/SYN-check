@@ -16,7 +16,9 @@ const cors = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-const anthropic = new Anthropic();   // reads ANTHROPIC_API_KEY from the function's secrets
+// Created on first use so a missing secret gives a clear 503 instead of a crash at startup.
+let anthropic: Anthropic | null = null;
+const vision = () => (anthropic ??= new Anthropic());   // reads ANTHROPIC_API_KEY from the function's secrets
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
 Deno.serve(async (req) => {
@@ -39,9 +41,11 @@ Deno.serve(async (req) => {
   const media = MEDIA.find((m) => m === body.media_type);
   if (!image || !media) return json(400, { error: 'image_base64_and_media_type_required' });
 
+  if (!Deno.env.get('ANTHROPIC_API_KEY')) return json(503, { error: 'vision_not_configured' });
+
   const log = (ok: boolean, error_code: string | null) => admin.from('label_extraction_log').insert({ user_id: user.id, ok, error_code });
   try {
-    const result = await extractLabel(anthropic, image, media);
+    const result = await extractLabel(vision(), image, media);
     await log(true, null);
     return json(200, result);
   } catch (e) {
