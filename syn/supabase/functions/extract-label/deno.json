@@ -1,6 +1,8 @@
 {
   "imports": {
     "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@1.6.0",
-    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.58.0"
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.58.0",
+    "jpeg-js": "npm:jpeg-js@0.4.4",
+    "upng-js": "npm:upng-js@2.1.0"
   }
 }

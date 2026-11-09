@@ -49,7 +49,7 @@ function newSession(): ScanSession {
 function reevaluate(s: ScanSession) {
   s.build = buildScan({
     barcode: s.barcode, reference: s.reference, identifiedBy: s.identifiedBy, today: new Date().toISOString().slice(0, 10),
-    label: s.label && s.labelConfirmed ? { extraction: s.label.extraction, confirmed: s.confirmed } : null,
+    label: s.label && s.labelConfirmed ? { extraction: s.label.extraction, confirmed: s.confirmed, visual: s.label.visual ?? null } : null,
   });
   s.verdict = evaluate({ ...s.build.input, purchaseChannel: s.purchaseChannel ?? undefined });
 }

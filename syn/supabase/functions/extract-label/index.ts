@@ -5,6 +5,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { ExtractionError, extractLabel, type ImageMediaType } from '../_shared/label-extraction/server.ts';
+import { decodeImage, visualVector, VISUAL_VERSION } from '../_shared/visual/server.ts';
 
 const MEDIA: ImageMediaType[] = ['image/jpeg', 'image/png', 'image/webp'];
 const DAILY_LIMIT = Number(Deno.env.get('SYN_LABEL_DAILY_LIMIT') ?? '30');
@@ -49,8 +50,14 @@ Deno.serve(async (req) => {
   };
   try {
     const result = await extractLabel(vision(), image, media);
+    // Experimental visual fingerprint of the same photo (no extra model call). Never blocks the reading.
+    let visual = null;
+    try {
+      const bytes = Uint8Array.from(atob(image), (c) => c.charCodeAt(0));
+      visual = { version: VISUAL_VERSION, vector: visualVector(decodeImage(bytes)) };
+    } catch (e) { console.error('visual fingerprint skipped', String(e)); }
     await log(true, null);
-    return json(200, result);
+    return json(200, { ...result, visual });
   } catch (e) {
     if (e instanceof ExtractionError) { await log(false, e.code); return json(e.code === 'image_too_large' ? 413 : 422, { error: e.code }); }
     if (e instanceof Anthropic.RateLimitError) { await log(false, 'rate_limited'); return json(503, { error: 'busy_try_again' }); }

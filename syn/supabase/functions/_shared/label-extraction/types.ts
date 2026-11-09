@@ -31,4 +31,8 @@ export interface LabelExtraction {
 
 /** Added by our server, never by the model. */
 export interface ExtractorMeta { engine: 'server_vision'; model: string; served_by: string; prompt_version: string; extracted_at: string }
-export interface ExtractionResult { extraction: LabelExtraction; meta: ExtractorMeta; corrections: string[] }
+export interface ExtractionResult {
+  extraction: LabelExtraction; meta: ExtractorMeta; corrections: string[];
+  /** Visual fingerprint of the same photo (experimental, @syn/visual); null when the image could not be decoded. */
+  visual?: { version: string; vector: number[] } | null;
+}

@@ -58,6 +58,8 @@ export interface ReferenceStructured {
   batch_regex?: string | null;
   /** Approved official ingredient lists for this variant, newest first. */
   formula_versions?: FormulaVersion[] | null;
+  /** Approved reference images with their visual fingerprint (experimental, §5.5). */
+  reference_images?: { id: string; view: string | null; acquisition: string; visual_version: string | null; visual_vector: number[]; source_url: string }[] | null;
 }
 
 export interface FormulaVersion {

@@ -11,6 +11,7 @@ export function ReasonRow({ reason }: { reason: Reason }) {
   const [open, setOpen] = useState(false);
   const s = reason.signal;
   const text = t.signal[s.type]?.[s.outcome] || s.type;
+  const experimental = s.type === 'packaging_similarity' || s.type === 'print_quality';
   const dotKey = reason.ignored ? 'ignored' : s.outcome === 'mismatch' ? reason.severity ?? 'minor' : s.outcome;
   const ev = s.evidence;
   const hasDetail = !!(ev && (ev.found || ev.reference || ev.sourceUrl)) || !!reason.ignored;
@@ -20,6 +21,8 @@ export function ReasonRow({ reason }: { reason: Reason }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: SEVERITY_DOT[dotKey] }} />
         <T style={{ flex: 1 }}>{text}</T>
+        {experimental && <View style={{ borderRadius: 999, borderWidth: 1, borderColor: p.muted, paddingHorizontal: 8 }}>
+          <T muted style={{ fontSize: 11 }}>{t.result.experimental}</T></View>}
         {hasDetail && <T muted>{open ? '−' : '+'}</T>}
       </View>
       {open && (

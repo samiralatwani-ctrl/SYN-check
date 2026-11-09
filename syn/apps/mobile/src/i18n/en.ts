@@ -53,7 +53,9 @@ export const en: Dict = {
     insufficient: { title: 'Not enough to judge', body: 'The available information is not enough for a verdict.' },
   },
   result: {
-    reasons: 'Reasons', refImage: 'Reference image', noRefImage: 'Not officially available', yourScan: 'Your scan', barcodeOnly: 'Barcode only',
+    reasons: 'Reasons',
+    experimental: 'Experimental',
+ refImage: 'Reference image', noRefImage: 'Not officially available', yourScan: 'Your scan', barcodeOnly: 'Barcode only',
     whatNow: 'What should I do now?', found: 'Found on the pack', reference: 'What the reference says', source: 'Official source',
     lastVerified: 'Last verified', method: 'Method version', unknownProduct: 'Product not in the database', missingTitle: 'To complete the check',
     batchAlerts: 'There are regulatory alerts for specific batches of this product. Compare the batch number on your pack:',
@@ -90,6 +92,7 @@ export const en: Dict = {
     batch_format: { match: 'Batch format matches the brand pattern', mismatch: 'Batch format does not match the brand pattern' },
     ingredients_order: { match: 'Ingredient order matches the official list', mismatch: 'Some ingredients are in a different order than the official list (may be legitimate)' },
     ingredients_content: { match: 'Ingredients match the official list', mismatch: 'Ingredients differ from the official list' },
+    packaging_similarity: { match: 'Pack looks like the reference images', mismatch: 'Pack looks different from the reference images (light or angle can cause this)', unavailable: 'Pack similarity is inconclusive' },
     gs1_vs_printed: { match: 'Printed batch matches the encoded code', mismatch: 'Printed batch differs from the code encoded on the same pack' },
   },
   steps: {

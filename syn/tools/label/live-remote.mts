@@ -43,7 +43,7 @@ const result = await post('/functions/v1/extract-label', { image_base64: await r
 const f = result.extraction.fields;
 console.log('read:', JSON.stringify({ brand: f.brand_name.value, product: f.product_name.value, batch: f.batch.value,
   mfg: f.manufacture_date.value, exp: f.expiry_date.value, conf: { batch: f.batch.confidence, exp: f.expiry_date.confidence },
-  model: result.meta.served_by, corrections: result.corrections, seconds: (Date.now() - t0) / 1000 }));
+  model: result.meta.served_by, visual: result.visual ? `${result.visual.version} x${result.visual.vector.length}` : null, corrections: result.corrections, seconds: (Date.now() - t0) / 1000 }));
 
 const matches = await post('/rest/v1/rpc/resolve_product_name', { p_brand: f.brand_name.value, p_name: f.product_name.value });
 console.log('product:', matches.map((m: { external_ref: string }) => m.external_ref));

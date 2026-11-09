@@ -62,3 +62,37 @@ describe('ingredients', () => {
     expect(run('Aqua, Talc', r).b.input.signals.some((s) => s.type.startsWith('ingredients_'))).toBe(false);
   });
 });
+
+describe('phase 6 acceptance: packaging fingerprint (experimental)', () => {
+  const unit = (i: number) => Array.from({ length: 128 }, (_, k) => (k === i ? 1 : 0));
+  const withImage = (): Reference => {
+    const r = ref();
+    r.variants[0].formula_versions = [];
+    r.variants[0].reference_images = [{ id: 'TEST_img', view: 'front', acquisition: 'authorized_agent_sample', visual_version: 'visual-v1',
+      visual_vector: unit(0), source_url: 'https://example.test/img' }];
+    return r;
+  };
+  const scan = (vector: number[], r = withImage()) => {
+    const x = label({ name: 'TEST_ Cream', batch: 'TEST1' });
+    const b = buildScan({ label: { extraction: x, confirmed: { product_name: { value: 'TEST_ Cream' }, batch: { value: 'TEST1' } },
+      visual: { version: 'visual-v1', vector } }, reference: r, identifiedBy: 'label_name', today: TODAY });
+    return { b, v: evaluate(b.input) };
+  };
+  it('a completely different-looking pack ALONE never gives "mismatch" — at most "minor", flagged experimental', () => {
+    const { b, v: verdict } = scan(unit(5));
+    expect(b.input.signals.find((s) => s.type === 'packaging_similarity')?.outcome).toBe('mismatch');
+    expect(verdict.verdict).toBe('minor');
+    expect(verdict.annotations).toContain('experimental_signal');
+  });
+  it('a close match is reported as match; the middle band is undecided', () => {
+    expect(scan(unit(0)).b.input.signals.find((s) => s.type === 'packaging_similarity')?.outcome).toBe('match');
+    const mid = unit(0).map((x, k) => (k === 1 ? 1 : x));   // cosine 0.707
+    expect(scan(mid).b.input.signals.find((s) => s.type === 'packaging_similarity')?.outcome).toBe('unavailable');
+  });
+  it('no approved reference image (or another fingerprint version) -> no signal at all', () => {
+    const r = withImage(); r.variants[0].reference_images = [];
+    expect(scan(unit(5), r).b.input.signals.some((s) => s.type === 'packaging_similarity')).toBe(false);
+    const r2 = withImage(); r2.variants[0].reference_images![0].visual_version = 'visual-v0';
+    expect(scan(unit(5), r2).b.input.signals.some((s) => s.type === 'packaging_similarity')).toBe(false);
+  });
+});

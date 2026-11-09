@@ -1,4 +1,4 @@
-# SYN fusion rules — method v1 (release candidate 2: owner decisions of 2026-11-09 + all-batches alerts)
+# SYN fusion rules — method v1 (release candidate 3: + experimental packaging fingerprint thresholds)
 # Source of truth for the rules engine. On publish, this file is copied verbatim
 # into method_versions.rules with its SHA-256, and every scan stores the version.
 #
@@ -8,7 +8,7 @@
 # "rule X fired because signal Y".
 
 version: v1
-status: rc2
+status: rc3
 
 verdicts: [mismatch, suspect, minor, match, insufficient]
 #          red       orange   yellow  green  gray
@@ -17,6 +17,8 @@ thresholds:
   min_confidence: 0.85            # below this a signal becomes outcome=unavailable
   min_readable_fields: 2
   ingredients_minor_max_diff: 2   # non-active ingredients added/removed; above this -> major
+  visual_match_min: 0.85          # experimental packaging fingerprint: >= this -> match
+  visual_mismatch_below: 0.6      # < this -> mismatch (capped at minor); in between -> unavailable
 
 readable_fields:                  # what counts toward min_readable_fields
   [gtin, product_name, size, concentration, batch, manufacture_date, expiry_date, ingredients]

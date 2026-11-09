@@ -101,3 +101,5 @@ function sortReasons(rs: Reason[]): Reason[] {
 }
 
 export const METHOD_VERSION = M.version;
+/** Numeric thresholds of the active method (used by signal builders, e.g. the experimental visual signal). */
+export const METHOD_THRESHOLDS = M.thresholds as unknown as Record<string, number>;

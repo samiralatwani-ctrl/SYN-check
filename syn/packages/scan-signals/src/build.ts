@@ -1,7 +1,8 @@
 import type { ScannedCode } from '@syn/gs1';
 import { compareLists, parseIngredientList } from '@syn/inci';
 import { MIN_CONFIDENCE, readableValue, type LabelExtraction } from '@syn/label-extraction';
-import type { Evidence, RegulatoryClass, ReferenceStatus, ScanInput, Signal, Source } from '@syn/rules-engine';
+import { similarity } from '@syn/visual';
+import { METHOD_THRESHOLDS, type Evidence, type RegulatoryClass, type ReferenceStatus, type ScanInput, type Signal, type Source } from '@syn/rules-engine';
 import type { FormulaVersion, LookupAlert, Reference, ReferenceVariant } from './types';
 
 /**
@@ -14,6 +15,8 @@ export type ConfirmableField = 'product_name' | 'batch' | 'manufacture_date' | '
 
 export interface LabelInput {
   extraction: LabelExtraction;
+  /** Visual fingerprint of the label photo (server-computed; experimental). */
+  visual?: { version: string; vector: number[] } | null;
   /** Fields the user checked on the confirmation screen. An edited value replaces the read one. */
   confirmed: Partial<Record<ConfirmableField, { value: string }>>;
 }
@@ -114,6 +117,8 @@ export function buildScan(b: ScanBuildInput): ScanBuild {
     }
     compareQuantity('size', readableValue(f.size), variant?.size_value, variant?.size_unit, signals, readable);
     compareQuantity('concentration', readableValue(f.concentration), variant?.concentration_value, variant?.concentration_unit, signals, readable);
+    const vis = packagingSignal(b.label!.visual, variant);
+    if (vis) signals.push(vis);
     const ing = b.label!.extraction.ingredients;
     if (ing.status === 'read' && ing.confidence >= MIN_CONFIDENCE && !ing.list_truncated) {
       readable.add('ingredients');
@@ -257,4 +262,20 @@ function ingredientSignals(ing: LabelExtraction['ingredients'], variant: Referen
       ...(older_ ? { reference: list(older_).join(', '), sourceUrl: older_.source_url, lastVerified: older_.source_date ?? undefined } : {}) },
   });
   return out;
+}
+
+/**
+ * EXPERIMENTAL (§5.5): best similarity between the photo's fingerprint and the approved reference images of the
+ * variant. Light and framing change the score, so the engine caps this signal at "minor" (it can never make
+ * "mismatch" on its own) and the app labels it "experimental". No reference image -> no signal.
+ */
+function packagingSignal(visual: LabelInput['visual'], variant: ReferenceVariant | null): Signal | null {
+  const refs = (variant?.reference_images ?? []).filter((r) => r.visual_version === visual?.version && r.visual_vector?.length);
+  if (!visual || !refs.length) return null;
+  let best = -1, bestRef = refs[0];
+  for (const r of refs) { const s = similarity(visual.vector, r.visual_vector); if (s > best) { best = s; bestRef = r; } }
+  const t = METHOD_THRESHOLDS;
+  const outcome = best >= t.visual_match_min ? 'match' : best < t.visual_mismatch_below ? 'mismatch' : 'unavailable';
+  return { type: 'packaging_similarity', outcome, source: 'model', confidence: 1,
+    evidence: { found: best.toFixed(2), reference: `${bestRef.view ?? ''} ${bestRef.acquisition}`.trim(), sourceUrl: bestRef.source_url } };
 }

@@ -1,6 +1,6 @@
 {
   "version": "v1",
-  "status": "rc2",
+  "status": "rc3",
   "verdicts": [
     "mismatch",
     "suspect",
@@ -11,7 +11,9 @@
   "thresholds": {
     "min_confidence": 0.85,
     "min_readable_fields": 2,
-    "ingredients_minor_max_diff": 2
+    "ingredients_minor_max_diff": 2,
+    "visual_match_min": 0.85,
+    "visual_mismatch_below": 0.6
   },
   "readable_fields": [
     "gtin",
@@ -302,5 +304,5 @@
     "expired == true => safety banner 'منتهي الصلاحية — لا تستخدمه'; verdict unchanged (decided)",
     "GS1 prefix is never shown as country of origin"
   ],
-  "rules_sha256": "1babc31f93aedfccd49d5aad9db80dfe6d80b298716ae44a673164b02ff648d0"
+  "rules_sha256": "ec207b38e988a6396a6b45a87c2cb2311c074cb1bf92fd63f7788ca572d988d5"
 }

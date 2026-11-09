@@ -12,7 +12,8 @@
     "@syn/gs1": "*",
     "@syn/rules-engine": "*",
     "@syn/label-extraction": "*",
-    "@syn/inci": "*"
+    "@syn/inci": "*",
+    "@syn/visual": "*"
   },
   "devDependencies": {
     "vitest": "3.2.4",
