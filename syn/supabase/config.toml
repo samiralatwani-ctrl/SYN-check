@@ -1,0 +1,5 @@
+project_id = "syn-check"
+
+[functions.extract-label]
+verify_jwt = true
+import_map = "./functions/extract-label/deno.json"
