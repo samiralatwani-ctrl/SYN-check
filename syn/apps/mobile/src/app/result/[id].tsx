@@ -19,6 +19,8 @@ export default function Result() {
   const v = rec.verdict;
   const variant = rec.build.variant;
   const used = rec.build.used;
+  // Not in our reference, but named by a regulator's alert: show the name exactly as the authority published it.
+  const alertName = rec.reference?.alerts.find((a) => a.lot_scope === 'all_batches')?.product_text;
   const yourScan = rec.label?.photoUri ? null : rec.label ? t.label.readTitle : t.result.barcodeOnly;
   const banners = v.annotations.filter((a) => a !== 'match_is_not_authenticity' || v.verdict === 'match');
 
@@ -38,7 +40,7 @@ export default function Result() {
               : <><T muted style={{ fontSize: 12 }}>{t.result.yourScan}</T><T style={{ fontSize: 13, textAlign: 'center' }}>{yourScan}</T></>}
           </View>
         </View>
-        <T bold style={{ fontSize: 18 }}>{variant?.official_name ?? used.productName ?? t.result.unknownProduct}</T>
+        <T bold style={{ fontSize: 18 }}>{variant?.official_name ?? used.productName ?? alertName ?? t.result.unknownProduct}</T>
         <T muted style={{ fontSize: 13 }}>
           {[variant?.brand, variant && t.status[variant.verification_status], rec.barcode?.gtin14 ?? rec.barcode?.raw].filter(Boolean).join(' · ')}
         </T>
