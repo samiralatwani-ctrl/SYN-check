@@ -16,6 +16,13 @@ python tools/importer/syn_import.py pilot data/*Pilot_JUVEDERM*.xlsx
 # الاختبارات (قاعدة اختبار منفصلة؛ اختبار القبول يعمل عند ضبط SYN_DATA_DIR)
 cd tools/importer && SYN_DATA_DIR=../../data pytest -q
 
+# بيانات TİTCK التركية (قاعدة منفصلة، غير منشورة للجمهور — D-020/D-021)
+python tools/titck/syn_titck.py fetch          # يجلب القائمتين من titck.gov.tr
+cd tools/titck && pytest -q && cd ../..
+
+# اتساق قواعد الحكم مع حالات الاختبار
+python tools/method/check_cases.py
+
 # لوحة الإدارة
 cd apps/admin && cp .env.example .env.local && npm install && npm run dev   # http://localhost:3100
 ```

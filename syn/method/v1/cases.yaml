@@ -260,3 +260,20 @@ cases:
       - { type: size, source: ocr }
       - { type: expired, outcome: mismatch, source: ocr, severity_override: safety_flag }
     expect: { verdict: match, step: S6_match, annotations_include: [expired_banner] }
+
+  - id: TEST_C27
+    title: "Scanned GTIN is on an alert that bans ALL batches -> red, even if the product is not in our DB"
+    context: { reference_status: not_found, regulatory_class: cosmetic }
+    readable: [gtin]
+    signals:
+      - { type: barcode_checksum, source: scanner }
+      - { type: alert_product_all_batches, outcome: mismatch, source: scanner }
+    expect: { verdict: mismatch, step: S1_critical }
+
+  - id: TEST_C28
+    title: "Same, but the GTIN digits came from OCR and were not confirmed -> orange"
+    context: { reference_status: not_found, regulatory_class: cosmetic }
+    readable: [gtin]
+    signals:
+      - { type: alert_product_all_batches, outcome: mismatch, source: ocr, user_confirmed: false }
+    expect: { verdict: suspect, step: S1_critical }

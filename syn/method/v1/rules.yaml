@@ -1,4 +1,4 @@
-# SYN fusion rules — method v1 (release candidate 1: owner decisions of 2026-11-09 applied)
+# SYN fusion rules — method v1 (release candidate 2: owner decisions of 2026-11-09 + all-batches alerts)
 # Source of truth for the rules engine. On publish, this file is copied verbatim
 # into method_versions.rules with its SHA-256, and every scan stores the version.
 #
@@ -8,7 +8,7 @@
 # "rule X fired because signal Y".
 
 version: v1
-status: rc1
+status: rc2
 
 verdicts: [mismatch, suspect, minor, match, insufficient]
 #          red       orange   yellow  green  gray
@@ -43,6 +43,7 @@ signals:
   gs1_vs_printed:          { severity: major,    needs_verified_ref: false, weight: 3,   note: "DataMatrix GTIN/batch/expiry contradicts printed text on the same pack" }
   ingredients_order:       { severity: minor,    needs_verified_ref: true,  weight: 1 }
   ingredients_content:     { severity: by_rule,  needs_verified_ref: true,  weight: 2,   note: "see ingredients_rule" }
+  alert_product_all_batches: { severity: critical, needs_verified_ref: false, weight: 6, note: "GTIN matches an alert that covers ALL batches (e.g. TİTCK 'Tüm seriler'); no batch reading needed. Only from alerts whose source is cleared for publication (D-021)" }
   alert_batch:             { severity: by_rule,  needs_verified_ref: false, weight: 5, weight_medical: 6, note: "see alert_rule" }
   packaging_similarity:    { severity: minor,    needs_verified_ref: true,  weight: 0.5, experimental: true }
   print_quality:           { severity: minor,    needs_verified_ref: false, weight: 0.5, experimental: true }
