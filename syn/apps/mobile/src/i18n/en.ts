@@ -2,7 +2,7 @@ import type { Dict } from './ar';
 export const en: Dict = {
   dir: 'ltr',
   app: { name: 'SYN: Check Before Use', demo: 'Demo mode: TEST_ data, not real products' },
-  tabs: { scan: 'Scan', about: 'About the method', settings: 'Settings' },
+  tabs: { scan: 'Scan', about: 'About the method', settings: 'Settings', explore: 'Explore' },
   scan: {
     modes: { barcode: 'Barcode', label: 'Label & ingredients', package: 'Package shape' },
     soon: 'Soon', aim: 'Point the camera at the barcode and hold still',
@@ -24,6 +24,25 @@ export const en: Dict = {
       angle: 'Photograph the label straight on', batch_area_not_visible: 'Show the batch number', dates_not_visible: 'Show the dates', ingredients_not_visible: 'Show the ingredients list' },
     readTitle: 'What we read', noNameMatch: 'No product with exactly this name in the database', manyNameMatches: 'More than one product has this name; scan the barcode to identify it',
     error: 'Could not read the label. Retake it in better light.',
+  },
+  channel: {
+    question: 'Where did you buy it? (optional)',
+    options: { authorized_agent: 'Authorised agent', pharmacy: 'Pharmacy', online_store: 'Online shop', social_media: 'Social-media account', other: 'Other' },
+  },
+  report: {
+    button: 'Report a suspicion', title: 'Report a suspicion',
+    intro: 'The report goes only to the manufacturer or a regulator. The seller is never named in the message or shown in the app.',
+    to: 'Send to', brandEmails: 'Manufacturer', authorities: 'Regulators', customEmail: 'Other e-mail (e.g. the health ministry in your country)',
+    noBrandContact: 'No official reporting e-mail for this brand in our sources', noIraqAuthority: 'We do not yet have a verified reporting channel of the Iraqi Ministry of Health; you can type an address.',
+    purposeFromSource: 'as stated by the source', attachPhoto: 'Attach the label photo', preview: 'Message preview',
+    seller: 'Seller details (optional, private)', sellerHint: 'Kept for SYN review only; never added to the message or shown in the app.',
+    sendEmail: 'Send by e-mail', shareWhatsapp: 'Share via WhatsApp', whatsappNote: 'WhatsApp does not take attachments from here; attach the label photo yourself after it opens.',
+    saved: 'Report saved. Reference:', saveError: 'Could not save the report, but you can still send it.', country: 'Iraq', needRecipient: 'Choose at least one recipient',
+    web: 'Open website', call: 'Call',
+  },
+  explore: {
+    title: 'Explore', alerts: 'Latest regulatory alerts', agents: 'Authorised agents', verified: 'Verified products',
+    allBatches: 'All batches', batch: 'Batch', source: 'Source', more: 'Show more', notOfficial: 'Not officially available',
   },
   status: { verified: 'Verified', candidate_unverified: 'Unverified candidate', retired: 'Retired' },
   verdict: {
@@ -77,7 +96,7 @@ export const en: Dict = {
     match: ['Keep the pack and the receipt.', 'Buying from the authorised agent is the strongest guarantee.', 'Photograph the label too for a closer check, if you have not.'],
     minor: ['Compare the pack with the market edition named in the reasons.', 'Ask the seller where it was imported from.', 'If in doubt, contact the manufacturer with the batch number.'],
     suspect: ['Do not use before checking.', 'Contact the manufacturer with the batch number and the manufacture and expiry dates.', 'Buy from the authorised agent.'],
-    mismatch: ['Do not use the product.', 'Keep the pack and receipt as evidence.', 'Report to the manufacturer and regulator (reporting arrives in a later update).'],
+    mismatch: ['Do not use the product.', 'Keep the pack and receipt as evidence.', 'Report to the manufacturer and regulator with "Report a suspicion".'],
     insufficient: ['Complete the check with the items listed above.', 'Not being in our database does not mean fake — or genuine.', 'If in doubt, buy from the authorised agent.'],
   },
   about: {

@@ -11,6 +11,7 @@ function Nav() {
   const p = usePalette();
   const headerLinks = () => (
     <View style={{ flexDirection: 'row', gap: 14, paddingHorizontal: 8 }}>
+      <Link href="/explore"><T style={{ color: p.brand }}>{t.tabs.explore}</T></Link>
       <Link href="/about-method"><T style={{ color: p.brand }}>{t.tabs.about}</T></Link>
       <Link href="/settings"><T style={{ color: p.brand }}>{t.tabs.settings}</T></Link>
     </View>
@@ -24,6 +25,8 @@ function Nav() {
         <Stack.Screen name="result/[id]" options={{ title: t.result.reasons }} />
         <Stack.Screen name="confirm/[id]" options={{ title: t.label.confirmTitle }} />
         <Stack.Screen name="next-steps/[id]" options={{ title: t.result.whatNow }} />
+        <Stack.Screen name="report/[id]" options={{ title: t.report.title }} />
+        <Stack.Screen name="explore" options={{ title: t.explore.title }} />
         <Stack.Screen name="about-method" options={{ title: t.about.title }} />
         <Stack.Screen name="settings" options={{ title: t.tabs.settings }} />
       </Stack>

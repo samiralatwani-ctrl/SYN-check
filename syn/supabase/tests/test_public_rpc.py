@@ -93,3 +93,39 @@ def test_extraction_log_is_private(conn):
             cur.execute('set local role anon')
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 cur.execute('select count(*) from label_extraction_log')
+
+
+def _user(conn, uid):
+    with conn.cursor() as cur:
+        cur.execute('insert into auth.users (id) values (%s) on conflict do nothing', (uid,))
+
+
+def as_user(conn, uid, sql, *a):
+    with conn.transaction():
+        with conn.cursor() as cur:
+            cur.execute('set local role authenticated')
+            cur.execute("select set_config('request.jwt.claim.sub', %s, true)", (uid,))
+            cur.execute(sql, a)
+            return cur.fetchall() if cur.description else None
+
+
+def test_reports_are_private_to_their_owner(conn):
+    a, b = '00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b'
+    _user(conn, a); _user(conn, b)
+    with conn.cursor() as cur:
+        cur.execute("insert into method_versions (version, status, rules, rules_sha256) values ('TEST_v', 'rc', '{}', 'TEST_sha')")
+    (sid,), = as_user(conn, a, "insert into scans (user_id, verdict, method_version, method_sha256) values (%s, 'mismatch', 'TEST_v', 'TEST_sha') returning id", a)
+    as_user(conn, a, "insert into reports (scan_id, user_id, recipients, channel, message_text, seller_info_private) values (%s, %s, '{x@example.test}', 'email', 'TEST_', 'TEST_SELLER')", sid, a)
+    assert as_user(conn, a, 'select seller_info_private from reports') == [('TEST_SELLER',)]
+    assert as_user(conn, b, 'select count(*) from reports') == [(0,)]          # another user sees nothing
+    assert anon(conn, 'select count(*) from reports') == [(0,)]
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):                  # cannot file a report as someone else
+        as_user(conn, b, "insert into reports (scan_id, user_id, recipients) values (%s, %s, '{}')", sid, a)
+
+
+def test_explore_and_report_contacts_hide_sellers(conn):
+    (e,), = anon(conn, 'select explore()')
+    assert set(e) == {'alerts', 'agents', 'verified'} and 'TEST_SELLER' not in str(e) and 'TEST_FIRMA' not in str(e)
+    assert [v['external_ref'] for v in e['verified']] == ['TEST_1']
+    (c,), = anon(conn, "select report_contacts('TEST_1')")
+    assert c['brand'] is None and 'TEST_SELLER' not in str(c)

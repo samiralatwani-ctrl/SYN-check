@@ -18,6 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Link href="/products">المنتجات</Link>
           <Link href="/alerts">الإنذارات الرقابية</Link>
           <Link href="/formulas">قوائم المكونات</Link>
+          <Link href="/reports">البلاغات</Link>
         </header>
         <main>{children}</main>
       </body>

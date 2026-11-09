@@ -42,7 +42,9 @@
         {
           "photosPermission": "يستخدم SYN الصور التي تختارها لقراءة الملصق فقط، ولا يحفظها دون موافقتك."
         }
-      ]
+      ],
+      "expo-mail-composer",
+      "expo-sharing"
     ],
     "scheme": "syn",
     "experiments": {

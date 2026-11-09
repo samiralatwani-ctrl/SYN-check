@@ -1,5 +1,5 @@
 import type { ExtractionResult, LabelExtraction } from '@syn/label-extraction';
-import type { LookupResult, NameMatch, Reference, ReferenceRepo, SearchHit } from './types';
+import type { ExploreData, LookupResult, NameMatch, Reference, ReferenceRepo, ReportContacts, SearchHit } from './types';
 
 /**
  * Demo mode only (EXPO_PUBLIC_SYN_FIXTURES=1). Every value here is a TEST_ fixture, never real product data,
@@ -41,6 +41,16 @@ const TEST_LABEL: LabelExtraction = {
 
 export const fixtureRepo: ReferenceRepo = {
   demo: true,
+  async reportContacts(): Promise<ReportContacts> {
+    return { brand: { name: 'TEST_BRAND', contact_text: 'TEST_ quality@example.test for product surveillance', report_email: null,
+        anti_counterfeit_page: null, official_verification_method: null, emails: ['quality@example.test'], agents: [] },
+      authorities: [{ country: 'TR', authority: 'TEST_AUTHORITY', kind: 'web', value: 'https://example.test/complaints', purpose: 'TEST_',
+        source_url: 'https://example.test', last_verified_at: '2026-11-09' }] };
+  },
+  async explore(): Promise<ExploreData> {
+    return { alerts: TEST_FILLER_REF.alerts, agents: [], verified: [{ external_ref: 'TEST_IQB-9002', official_name: 'TEST_ Filler ULTRA', brand: 'TEST_BRAND', category: 'filler', regulatory_class: 'medical_device' }] };
+  },
+  async saveReport() { return { scanId: 'TEST_scan', reportId: 'TEST_report' }; },
   async resolveProductName(brand, name): Promise<NameMatch[]> {
     const key = `${brand ?? ''} ${name}`.toLowerCase();
     return key.includes('test_ filler ultra') ? [{ external_ref: 'TEST_IQB-9002', official_name: 'TEST_ Filler ULTRA', verification_status: 'verified' }] : [];

@@ -4,7 +4,7 @@ import { en } from './en';
 export const tr: Dict = {
   ...en,
   app: { name: 'SYN: Kullanmadan Önce Kontrol Et', demo: 'Demo modu: TEST_ verileri, gerçek ürün değildir' },
-  tabs: { scan: 'Tara', about: 'Yöntem hakkında', settings: 'Ayarlar' },
+  tabs: { scan: 'Tara', about: 'Yöntem hakkında', settings: 'Ayarlar', explore: 'Keşfet' },
   scan: {
     ...en.scan,
     modes: { barcode: 'Barkod', label: 'Etiket ve içerik', package: 'Ambalaj şekli' },

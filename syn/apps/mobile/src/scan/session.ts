@@ -21,7 +21,11 @@ export interface ScanSession {
   nameMatches: number;            // products matching the label name (0, 1 or more)
   build: ScanBuild | null;
   verdict: Verdict | null;
+  purchaseChannel: PurchaseChannel | null;
+  reportId: string | null;
 }
+
+export type PurchaseChannel = 'authorized_agent' | 'pharmacy' | 'online_store' | 'social_media' | 'other';
 
 const sessions = new Map<string, ScanSession>();
 export const getSession = (id: string) => sessions.get(id);
@@ -36,7 +40,7 @@ function newSession(): ScanSession {
   const now = new Date();
   const s: ScanSession = {
     id: `${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`, createdAt: now.toISOString(), demo: repo.demo,
-    barcode: null, label: null, confirmed: {}, labelConfirmed: false, reference: null, identifiedBy: null, nameMatches: 0, build: null, verdict: null,
+    barcode: null, label: null, confirmed: {}, labelConfirmed: false, reference: null, identifiedBy: null, nameMatches: 0, build: null, verdict: null, purchaseChannel: null, reportId: null,
   };
   sessions.set(s.id, s);
   return s;
@@ -47,7 +51,15 @@ function reevaluate(s: ScanSession) {
     barcode: s.barcode, reference: s.reference, identifiedBy: s.identifiedBy, today: new Date().toISOString().slice(0, 10),
     label: s.label && s.labelConfirmed ? { extraction: s.label.extraction, confirmed: s.confirmed } : null,
   });
-  s.verdict = evaluate(s.build.input);
+  s.verdict = evaluate({ ...s.build.input, purchaseChannel: s.purchaseChannel ?? undefined });
+}
+
+/** Optional question (§5.6). Social media adds a caution note; the verdict itself does not change (D-011). */
+export function setPurchaseChannel(id: string, channel: PurchaseChannel | null) {
+  const s = sessions.get(id);
+  if (!s?.build) return;
+  s.purchaseChannel = channel;
+  reevaluate(s);
 }
 
 export async function startBarcode(symbology: Symbology, data: string): Promise<ScanSession> {

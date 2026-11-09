@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Linking, View } from 'react-native';
 import { useI18n } from '../../i18n';
-import { getSession } from '../../scan/session';
+import { getSession, setPurchaseChannel, type PurchaseChannel } from '../../scan/session';
+import { useState } from 'react';
+import { Pressable } from 'react-native';
 import { LabelCapture } from '../../ui/LabelCapture';
 import { Button } from '../../ui/Button';
 import { ReasonRow } from '../../ui/ReasonRow';
@@ -15,6 +17,7 @@ export default function Result() {
   const { t } = useI18n();
   const p = usePalette();
   const rec = getSession(id);
+  const [, refresh] = useState(0);
   if (!rec?.verdict || !rec.build) return <Screen><T>—</T></Screen>;
   const v = rec.verdict;
   const variant = rec.build.variant;
@@ -93,7 +96,25 @@ export default function Result() {
         </Card>
       )}
 
+      <Card>
+        <T bold>{t.channel.question}</T>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {(['authorized_agent', 'pharmacy', 'online_store', 'social_media', 'other'] as PurchaseChannel[]).map((c) => {
+            const on = rec.purchaseChannel === c;
+            return (
+              <Pressable key={c} accessibilityRole="radio" accessibilityState={{ checked: on }}
+                onPress={() => { setPurchaseChannel(rec.id, on ? null : c); refresh((n) => n + 1); }}
+                style={{ borderRadius: 999, borderWidth: 1, borderColor: on ? p.brand : p.line, backgroundColor: on ? p.brand : p.card, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <T style={{ fontSize: 13, color: on ? p.brandInk : p.ink }}>{t.channel.options[c]}</T>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Card>
+
       <Button title={t.result.whatNow} onPress={() => router.push({ pathname: '/next-steps/[id]', params: { id: rec.id } })} />
+      {(v.verdict === 'mismatch' || v.verdict === 'suspect' || v.verdict === 'minor') &&
+        <Button title={t.report.button} variant="ghost" onPress={() => router.push({ pathname: '/report/[id]', params: { id: rec.id } })} />}
       <T muted style={{ fontSize: 12, textAlign: 'center' }}>{t.result.method}: {v.methodVersion} · {v.methodSha256.slice(0, 8)} · {v.step}</T>
     </Screen>
   );
