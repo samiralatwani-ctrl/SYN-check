@@ -1,0 +1,66 @@
+import type { DateField, LabelExtraction, Quantity, QuantityField, Reason, TextField } from './types';
+
+/** What the model returns (packages/schemas/label-extraction.schema.json, v1.1). */
+interface WireField { value: string | null; confidence: number; unreadable_reason: Reason | 'none' }
+const reasonOf = (f: WireField): Reason | null => (f.unreadable_reason === 'none' ? null : f.unreadable_reason);
+export interface WireExtraction {
+  image_quality_usable: boolean;
+  image_issues: string[];
+  languages: string[];
+  fields: {
+    brand_name: WireField; product_name: WireField; size: WireField; concentration: WireField; manufacturer_name: WireField;
+    batch: WireField & { ambiguous_positions: number[] };
+    manufacture_date: WireField & { format_ambiguous: boolean };
+    expiry_date: WireField & { format_ambiguous: boolean };
+  };
+  ingredients_status: LabelExtraction['ingredients']['status'];
+  ingredients_text: string | null;
+  ingredients_truncated: boolean;
+  ingredients_confidence: number;
+}
+
+const AMBIGUOUS: Record<string, string[]> = { O: ['O', '0'], '0': ['0', 'O'], I: ['I', '1'], '1': ['1', 'I'], l: ['l', '1'],
+  S: ['S', '5'], '5': ['5', 'S'], B: ['B', '8'], '8': ['8', 'B'], Z: ['Z', '2'], '2': ['2', 'Z'] };
+
+const text = (f: WireField, ambiguous: TextField['ambiguous_characters'] = []): TextField =>
+  ({ value: f.value, raw_text: f.value, confidence: f.confidence, unreadable_reason: reasonOf(f), ambiguous_characters: ambiguous });
+
+const none = { value: null, raw_text: null, confidence: 0, unreadable_reason: 'not_present' as const };
+
+const UNITS: Record<string, Quantity['unit']> = { ml: 'ml', l: 'l', g: 'g', kg: 'kg', mg: 'mg', 'mg/ml': 'mg/ml', '%': '%', u: 'U', 'fl oz': 'fl_oz', oz: 'oz' };
+/** Only a plain "<number> <unit>" becomes structured; anything else stays text-only (never guessed). */
+function quantity(f: WireField): QuantityField {
+  const m = f.value?.trim().match(/^(\d+(?:[.,]\d+)?)\s*(ml|l|g|kg|mg\/ml|mg|%|u|fl\.? ?oz|oz)\.?$/i);
+  const unit = m ? UNITS[m[2].toLowerCase().replace('fl.', 'fl').replace('floz', 'fl oz')] : undefined;
+  if (!m || !unit) return { ...none, raw_text: f.value, confidence: f.confidence, unreadable_reason: f.value ? 'ambiguous' : reasonOf(f) ?? 'not_present' };
+  return { value: { amount: Number(m[1].replace(',', '.')), unit, unit_as_printed: m[2] }, raw_text: f.value, confidence: f.confidence, unreadable_reason: null };
+}
+
+function date(f: WireField & { format_ambiguous: boolean }): DateField {
+  const v = f.value?.trim() ?? null;
+  return {
+    value: v ? { iso: v, precision: v.length === 10 ? 'day' : 'month' } : null,
+    raw_text: v, confidence: f.confidence, unreadable_reason: reasonOf(f), format_ambiguous: f.format_ambiguous, marker_as_printed: null,
+  };
+}
+
+/** Converts the compact wire output into the internal shape used by the rest of SYN. */
+export function fromWire(w: WireExtraction): LabelExtraction {
+  const b = w.fields.batch;
+  const amb = (b.ambiguous_positions ?? []).filter((i) => b.value && i >= 0 && i < b.value.length)
+    .map((i) => ({ index: i, candidates: AMBIGUOUS[b.value![i]] ?? [b.value![i], '?'] }));
+  return {
+    schema_version: '1.0',
+    image_quality: { usable: w.image_quality_usable, issues: w.image_issues },
+    languages_detected: w.languages,
+    fields: {
+      brand_name: text(w.fields.brand_name), product_name: text(w.fields.product_name),
+      size: quantity(w.fields.size), concentration: quantity(w.fields.concentration),
+      manufacturer_name: text(w.fields.manufacturer_name), manufacturer_address: { ...none, ambiguous_characters: [] },
+      batch: text(b, amb), manufacture_date: date(w.fields.manufacture_date), expiry_date: date(w.fields.expiry_date),
+      pao_months: none, barcode_digits: { ...none, ambiguous_characters: [] }, gs1_element_string: { ...none, ambiguous_characters: [] },
+    },
+    ingredients: { status: w.ingredients_status, raw_text: w.ingredients_text, items: [], list_truncated: w.ingredients_truncated, confidence: w.ingredients_confidence },
+    registration_numbers: [],
+  };
+}

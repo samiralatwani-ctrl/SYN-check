@@ -2,3 +2,4 @@
 export * from './types.ts';
 export { enforceInvariants, readableValue, MIN_CONFIDENCE } from './validate.ts';
 export { PROMPT_VERSION } from './prompt.ts';
+export { fromWire, type WireExtraction } from './wire.ts';

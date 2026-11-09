@@ -43,7 +43,10 @@ Deno.serve(async (req) => {
 
   if (!Deno.env.get('ANTHROPIC_API_KEY')) return json(503, { error: 'vision_not_configured' });
 
-  const log = (ok: boolean, error_code: string | null) => admin.from('label_extraction_log').insert({ user_id: user.id, ok, error_code });
+  const log = async (ok: boolean, error_code: string | null) => {
+    const { error } = await admin.from('label_extraction_log').insert({ user_id: user.id, ok, error_code });
+    if (error) console.error('label_extraction_log insert failed', error.message);
+  };
   try {
     const result = await extractLabel(vision(), image, media);
     await log(true, null);
@@ -51,7 +54,11 @@ Deno.serve(async (req) => {
   } catch (e) {
     if (e instanceof ExtractionError) { await log(false, e.code); return json(e.code === 'image_too_large' ? 413 : 422, { error: e.code }); }
     if (e instanceof Anthropic.RateLimitError) { await log(false, 'rate_limited'); return json(503, { error: 'busy_try_again' }); }
-    if (e instanceof Anthropic.APIError) { await log(false, `api_${e.status}`); return json(502, { error: 'vision_unavailable' }); }
+    if (e instanceof Anthropic.APIError) {
+      console.error('vision API error', e.status, e.message);
+      await log(false, `api_${e.status}`);
+      return json(502, { error: 'vision_unavailable', status: e.status ?? null });
+    }
     throw e;
   }
 });

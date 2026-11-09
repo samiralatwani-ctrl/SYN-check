@@ -1,56 +1,42 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://syn.app/schemas/label-extraction/v1.json",
-  "title": "SYN label extraction v1",
-  "description": "Output of the label-reading step. The model only transcribes what is visible. It never infers, completes, or corrects a value, and it never judges authenticity. An unreadable field has value null and a reason. This file is the wire schema sent to the Claude API (structured outputs subset: no numeric/string constraints, no if/then); the invariants it cannot express are enforced by packages/label-extraction/src/validate.ts.",
+  "$id": "https://syn.app/schemas/label-extraction/v1.1.json",
+  "title": "SYN label extraction (wire) v1.1",
+  "description": "Compact schema the vision model fills (kept small so the structured-output grammar stays within limits). The server converts it to the internal LabelExtraction shape and enforces the invariants in packages/label-extraction (wire.ts, validate.ts). The model only transcribes; it never judges authenticity.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version",
-    "image_quality",
-    "languages_detected",
+    "image_quality_usable",
+    "image_issues",
+    "languages",
     "fields",
-    "ingredients",
-    "registration_numbers"
+    "ingredients_status",
+    "ingredients_text",
+    "ingredients_truncated",
+    "ingredients_confidence"
   ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "enum": [
-        "1.0"
-      ]
+    "image_quality_usable": {
+      "type": "boolean"
     },
-    "image_quality": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "usable",
-        "issues"
-      ],
-      "properties": {
-        "usable": {
-          "type": "boolean"
-        },
-        "issues": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "blur",
-              "glare",
-              "low_light",
-              "cropped",
-              "too_far",
-              "angle",
-              "batch_area_not_visible",
-              "dates_not_visible",
-              "ingredients_not_visible"
-            ]
-          }
-        }
+    "image_issues": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "blur",
+          "glare",
+          "low_light",
+          "cropped",
+          "too_far",
+          "angle",
+          "batch_area_not_visible",
+          "dates_not_visible",
+          "ingredients_not_visible"
+        ]
       }
     },
-    "languages_detected": {
+    "languages": {
       "type": "array",
       "items": {
         "type": "string",
@@ -77,194 +63,288 @@
         "size",
         "concentration",
         "manufacturer_name",
-        "manufacturer_address",
         "batch",
         "manufacture_date",
-        "expiry_date",
-        "pao_months",
-        "barcode_digits",
-        "gs1_element_string"
+        "expiry_date"
       ],
       "properties": {
         "brand_name": {
-          "$ref": "#/$defs/textField"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            }
+          }
         },
         "product_name": {
-          "$ref": "#/$defs/textField"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            }
+          }
         },
         "size": {
-          "$ref": "#/$defs/quantityField"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            }
+          },
+          "description": "As printed, e.g. '50 ml' or '2 x 1 ml'."
         },
         "concentration": {
-          "$ref": "#/$defs/quantityField"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            }
+          },
+          "description": "As printed, e.g. '24 mg/ml'."
         },
         "manufacturer_name": {
-          "$ref": "#/$defs/textField"
-        },
-        "manufacturer_address": {
-          "$ref": "#/$defs/textField"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            }
+          }
         },
         "batch": {
-          "$ref": "#/$defs/textField",
-          "description": "Exact characters as printed (LOT/Batch/Seri No/رقم التشغيلة)."
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason",
+            "ambiguous_positions"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            },
+            "ambiguous_positions": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "0-based positions of characters that could be read two ways (O/0, I/1, S/5, B/8, Z/2)."
+            }
+          },
+          "description": "Exact characters as printed (LOT / Batch / Seri No / رقم التشغيلة)."
         },
         "manufacture_date": {
-          "$ref": "#/$defs/dateField"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason",
+            "format_ambiguous"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "unreadable_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "not_present",
+                "not_visible",
+                "blurred",
+                "glare",
+                "cropped",
+                "ambiguous",
+                "low_confidence"
+              ],
+              "description": "'none' when value is read."
+            },
+            "format_ambiguous": {
+              "type": "boolean"
+            }
+          },
+          "description": "YYYY-MM-DD if the day is printed, YYYY-MM if only month and year. Null with reason 'ambiguous' if day/month order is unclear."
         },
         "expiry_date": {
-          "$ref": "#/$defs/dateField"
-        },
-        "pao_months": {
-          "$ref": "#/$defs/intField",
-          "description": "Period-after-opening symbol, e.g. 12M -> 12."
-        },
-        "barcode_digits": {
-          "$ref": "#/$defs/textField",
-          "description": "Human-readable digits printed under a barcode."
-        },
-        "gs1_element_string": {
-          "$ref": "#/$defs/textField",
-          "description": "Printed GS1 text such as (01)...(17)...(10)..."
-        }
-      }
-    },
-    "ingredients": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "status",
-        "raw_text",
-        "items",
-        "list_truncated",
-        "confidence"
-      ],
-      "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "read",
-            "partially_read",
-            "not_visible",
-            "unreadable"
-          ]
-        },
-        "raw_text": {
-          "anyOf": [
-            {
-              "type": "string"
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "confidence",
+            "unreadable_reason",
+            "format_ambiguous"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
             },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "position",
-              "name_as_printed",
-              "declared_concentration",
-              "confidence"
-            ],
-            "properties": {
-              "position": {
-                "type": "integer"
-              },
-              "name_as_printed": {
-                "type": "string"
-              },
-              "declared_concentration": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "confidence": {
-                "type": "number"
-              }
-            }
-          }
-        },
-        "list_truncated": {
-          "type": "boolean"
-        },
-        "confidence": {
-          "type": "number"
-        }
-      }
-    },
-    "registration_numbers": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "label_as_printed",
-          "number",
-          "confidence"
-        ],
-        "properties": {
-          "label_as_printed": {
-            "type": "string"
-          },
-          "number": {
-            "type": "string"
-          },
-          "confidence": {
-            "type": "number"
-          }
-        }
-      }
-    }
-  },
-  "$defs": {
-    "textField": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "value",
-        "raw_text",
-        "confidence",
-        "unreadable_reason",
-        "ambiguous_characters"
-      ],
-      "properties": {
-        "value": {
-          "anyOf": [
-            {
-              "type": "string"
+            "confidence": {
+              "type": "number"
             },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "raw_text": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "confidence": {
-          "type": "number",
-          "description": "0 to 1. Your certainty that value is exactly what is printed."
-        },
-        "unreadable_reason": {
-          "anyOf": [
-            {
+            "unreadable_reason": {
               "type": "string",
               "enum": [
+                "none",
                 "not_present",
                 "not_visible",
                 "blurred",
@@ -272,267 +352,38 @@
                 "cropped",
                 "ambiguous",
                 "low_confidence"
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "ambiguous_characters": {
-          "type": "array",
-          "description": "Positions where a character could be read two ways (O/0, I/1, S/5, B/8). Do not resolve them.",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "index",
-              "candidates"
-            ],
-            "properties": {
-              "index": {
-                "type": "integer"
-              },
-              "candidates": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "quantityField": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "value",
-        "raw_text",
-        "confidence",
-        "unreadable_reason"
-      ],
-      "properties": {
-        "value": {
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "amount",
-                "unit",
-                "unit_as_printed"
               ],
-              "properties": {
-                "amount": {
-                  "type": "number"
-                },
-                "unit": {
-                  "type": "string",
-                  "enum": [
-                    "ml",
-                    "l",
-                    "g",
-                    "kg",
-                    "mg",
-                    "mg/ml",
-                    "%",
-                    "U",
-                    "fl_oz",
-                    "oz",
-                    "syringe_count",
-                    "other"
-                  ]
-                },
-                "unit_as_printed": {
-                  "type": "string"
-                }
-              }
+              "description": "'none' when value is read."
             },
-            {
-              "type": "null"
+            "format_ambiguous": {
+              "type": "boolean"
             }
-          ]
-        },
-        "raw_text": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "confidence": {
-          "type": "number",
-          "description": "0 to 1. Your certainty that value is exactly what is printed."
-        },
-        "unreadable_reason": {
-          "anyOf": [
-            {
-              "type": "string",
-              "enum": [
-                "not_present",
-                "not_visible",
-                "blurred",
-                "glare",
-                "cropped",
-                "ambiguous",
-                "low_confidence"
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
+          },
+          "description": "YYYY-MM-DD if the day is printed, YYYY-MM if only month and year. Null with reason 'ambiguous' if day/month order is unclear."
         }
       }
     },
-    "dateField": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "value",
-        "raw_text",
-        "confidence",
-        "unreadable_reason",
-        "format_ambiguous",
-        "marker_as_printed"
-      ],
-      "properties": {
-        "value": {
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "iso",
-                "precision"
-              ],
-              "properties": {
-                "iso": {
-                  "type": "string",
-                  "description": "YYYY-MM-DD when the day is printed, YYYY-MM when only month and year are printed."
-                },
-                "precision": {
-                  "type": "string",
-                  "enum": [
-                    "day",
-                    "month"
-                  ]
-                }
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "raw_text": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "confidence": {
-          "type": "number",
-          "description": "0 to 1. Your certainty that value is exactly what is printed."
-        },
-        "unreadable_reason": {
-          "anyOf": [
-            {
-              "type": "string",
-              "enum": [
-                "not_present",
-                "not_visible",
-                "blurred",
-                "glare",
-                "cropped",
-                "ambiguous",
-                "low_confidence"
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "format_ambiguous": {
-          "type": "boolean",
-          "description": "True when the printed date could be read as DD/MM or MM/DD. Then value MUST be null and unreadable_reason 'ambiguous'."
-        },
-        "marker_as_printed": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      }
+    "ingredients_status": {
+      "type": "string",
+      "enum": [
+        "read",
+        "partially_read",
+        "not_visible",
+        "unreadable"
+      ]
     },
-    "intField": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "value",
-        "raw_text",
-        "confidence",
-        "unreadable_reason"
+    "ingredients_text": {
+      "type": [
+        "string",
+        "null"
       ],
-      "properties": {
-        "value": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "raw_text": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "confidence": {
-          "type": "number",
-          "description": "0 to 1. Your certainty that value is exactly what is printed."
-        },
-        "unreadable_reason": {
-          "anyOf": [
-            {
-              "type": "string",
-              "enum": [
-                "not_present",
-                "not_visible",
-                "blurred",
-                "glare",
-                "cropped",
-                "ambiguous",
-                "low_confidence"
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      }
+      "description": "The ingredient list exactly as printed, in order."
+    },
+    "ingredients_truncated": {
+      "type": "boolean"
+    },
+    "ingredients_confidence": {
+      "type": "number"
     }
   }
 }

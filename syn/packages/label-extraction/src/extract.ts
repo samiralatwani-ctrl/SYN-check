@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import schema from '../../schemas/label-extraction.schema.json' with { type: 'json' };
 import { PROMPT_VERSION, SYSTEM_PROMPT, USER_INSTRUCTION } from './prompt';
-import type { ExtractionResult, LabelExtraction } from './types';
+import type { ExtractionResult } from './types';
+import { fromWire, type WireExtraction } from './wire';
 import { enforceInvariants } from './validate';
 
 export const MODEL = 'claude-opus-5-5';
@@ -40,10 +41,10 @@ export async function extractLabel(client: Anthropic, imageBase64: string, media
   if (response.stop_reason === 'max_tokens') throw new ExtractionError('truncated', 'output truncated');
   const text = response.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('');
   if (!text) throw new ExtractionError('no_output', 'no text output');
-  let parsed: LabelExtraction;
-  try { parsed = JSON.parse(text) as LabelExtraction; } catch { throw new ExtractionError('invalid_json', 'output is not JSON'); }
+  let wire: WireExtraction;
+  try { wire = JSON.parse(text) as WireExtraction; } catch { throw new ExtractionError('invalid_json', 'output is not JSON'); }
 
-  const { extraction, corrections } = enforceInvariants(parsed);
+  const { extraction, corrections } = enforceInvariants(fromWire(wire));
   return {
     extraction, corrections,
     meta: { engine: 'server_vision', model: MODEL, served_by: response.model, prompt_version: PROMPT_VERSION, extracted_at: new Date().toISOString() },

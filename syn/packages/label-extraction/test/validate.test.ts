@@ -60,3 +60,27 @@ describe('enforceInvariants', () => {
     expect(x.fields.expiry_date.value).not.toBeNull();
   });
 });
+
+describe('fromWire', () => {
+  const f = (value: string | null, conf = 0.95) => ({ value, confidence: conf, unreadable_reason: value ? ('none' as const) : ('not_present' as const) });
+  const wire = {
+    image_quality_usable: true, image_issues: [], languages: ['en'],
+    fields: { brand_name: f('TEST_'), product_name: f('TEST_ ULTRA'), size: f('2 x 1 ml'), concentration: f('24 mg/ml'), manufacturer_name: f(null),
+      batch: { ...f('1OO5'), ambiguous_positions: [1, 2, 9] }, manufacture_date: { ...f('2025-02'), format_ambiguous: false },
+      expiry_date: { ...f('2027-01-31'), format_ambiguous: false } },
+    ingredients_status: 'read' as const, ingredients_text: 'Aqua, Glycerin', ingredients_truncated: false, ingredients_confidence: 0.9,
+  };
+  it('maps to the internal shape without inventing values', async () => {
+    const { fromWire } = await import('../src');
+    const x = fromWire(wire);
+    expect(x.fields.batch.ambiguous_characters).toEqual([{ index: 1, candidates: ['O', '0'] }, { index: 2, candidates: ['O', '0'] }]);
+    expect(x.fields.concentration.value).toEqual({ amount: 24, unit: 'mg/ml', unit_as_printed: 'mg/ml' });
+    expect(x.fields.size.value).toBeNull();                     // "2 x 1 ml" is not a plain quantity -> kept as text only
+    expect(x.fields.size.raw_text).toBe('2 x 1 ml');
+    expect(x.fields.manufacture_date.value).toEqual({ iso: '2025-02', precision: 'month' });
+    expect(x.fields.expiry_date.value).toEqual({ iso: '2027-01-31', precision: 'day' });
+    expect(x.fields.brand_name.unreadable_reason).toBeNull();
+    expect(x.fields.manufacturer_name.unreadable_reason).toBe('not_present');
+    expect(x.ingredients.raw_text).toBe('Aqua, Glycerin');
+  });
+});
