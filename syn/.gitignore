@@ -13,3 +13,4 @@ __pycache__/
 dist/
 web-build/
 apps/mobile/.env
+supabase/.temp/
