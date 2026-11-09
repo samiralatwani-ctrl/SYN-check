@@ -1,0 +1,33 @@
+// Mirrors packages/schemas/label-extraction.schema.json (wire schema).
+export type Reason = 'not_present' | 'not_visible' | 'blurred' | 'glare' | 'cropped' | 'ambiguous' | 'low_confidence';
+interface Base<V> { value: V | null; raw_text: string | null; confidence: number; unreadable_reason: Reason | null }
+export interface TextField extends Base<string> { ambiguous_characters: { index: number; candidates: string[] }[] }
+export interface Quantity { amount: number; unit: string; unit_as_printed: string }
+export type QuantityField = Base<Quantity>;
+export interface DateValue { iso: string; precision: 'day' | 'month' }
+export interface DateField extends Base<DateValue> { format_ambiguous: boolean; marker_as_printed: string | null }
+export type IntField = Base<number>;
+
+export interface LabelExtraction {
+  schema_version: '1.0';
+  image_quality: { usable: boolean; issues: string[] };
+  languages_detected: string[];
+  fields: {
+    brand_name: TextField; product_name: TextField; size: QuantityField; concentration: QuantityField;
+    manufacturer_name: TextField; manufacturer_address: TextField; batch: TextField;
+    manufacture_date: DateField; expiry_date: DateField; pao_months: IntField;
+    barcode_digits: TextField; gs1_element_string: TextField;
+  };
+  ingredients: {
+    status: 'read' | 'partially_read' | 'not_visible' | 'unreadable';
+    raw_text: string | null;
+    items: { position: number; name_as_printed: string; declared_concentration: string | null; confidence: number }[];
+    list_truncated: boolean;
+    confidence: number;
+  };
+  registration_numbers: { label_as_printed: string; number: string; confidence: number }[];
+}
+
+/** Added by our server, never by the model. */
+export interface ExtractorMeta { engine: 'server_vision'; model: string; served_by: string; prompt_version: string; extracted_at: string }
+export interface ExtractionResult { extraction: LabelExtraction; meta: ExtractorMeta; corrections: string[] }

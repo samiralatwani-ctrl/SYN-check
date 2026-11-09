@@ -71,3 +71,25 @@ def test_search_is_accent_insensitive_and_never_searches_sellers(conn):
     assert anon(conn, "select external_ref from search_products('juvederm')") == [('TEST_1',)]
     assert anon(conn, "select external_ref from search_products('TEST_SELLER')") == []
     assert anon(conn, "select external_ref from search_products('j')") == []
+
+
+def test_resolve_product_name_exact_only(conn):
+    # accent, case, ® and spacing are ignored; partial names are not matched (we never pick a product for the user)
+    assert anon(conn, "select external_ref from resolve_product_name('test_ juvederm', 'thing')") == [('TEST_1',)]
+    assert anon(conn, "select external_ref from resolve_product_name(null, 'TEST_  Juvéderm Thing')") == [('TEST_1',)]
+    assert anon(conn, "select external_ref from resolve_product_name('TEST_', 'Juvederm')") == []
+    assert anon(conn, "select external_ref from resolve_product_name('x', '')") == []
+
+
+def test_product_reference_has_variants_and_no_sellers(conn):
+    (r,), = anon(conn, "select product_reference('TEST_1')")
+    assert [v['external_ref'] for v in r['variants']] == ['TEST_1'] and r['alerts'] == []
+    assert 'TEST_SELLER' not in str(r)
+
+
+def test_extraction_log_is_private(conn):
+    with conn.transaction():
+        with conn.cursor() as cur:
+            cur.execute('set local role anon')
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                cur.execute('select count(*) from label_extraction_log')

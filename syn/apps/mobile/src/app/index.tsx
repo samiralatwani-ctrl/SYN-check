@@ -1,11 +1,12 @@
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Platform, TextInput, View } from 'react-native';
+import { Platform, Pressable, TextInput, View } from 'react-native';
 import { repo } from '../data/repo';
-import type { SearchHit } from '../data/types';
+import type { SearchHit } from '@syn/scan-signals';
 import { useI18n } from '../i18n';
-import { runBarcodeScan, toSymbology } from '../scan/runScan';
+import { startBarcode, toSymbology } from '../scan/session';
+import { LabelCapture } from '../ui/LabelCapture';
 import { Button } from '../ui/Button';
 import { Card, Screen } from '../ui/Screen';
 import { T } from '../ui/T';
@@ -22,13 +23,14 @@ export default function ScanScreen() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[] | null>(null);
+  const [mode, setMode] = useState<'barcode' | 'label'>('barcode');
   const lock = useRef(false);
 
   const check = useCallback(async (type: string, data: string) => {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(null);
     try {
-      const rec = await runBarcodeScan(toSymbology(type), data);
+      const rec = await startBarcode(toSymbology(type), data);
       router.push({ pathname: '/result/[id]', params: { id: rec.id } });
     } catch {
       setError(t.scan.error);
@@ -49,18 +51,25 @@ export default function ScanScreen() {
   return (
     <Screen>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {(['barcode', 'label', 'package'] as const).map((m) => (
-          <View key={m} accessibilityState={{ disabled: m !== 'barcode', selected: m === 'barcode' }}
-            style={{ flex: 1, borderRadius: 999, paddingVertical: 8, alignItems: 'center',
-              backgroundColor: m === 'barcode' ? p.brand : p.card, borderWidth: 1, borderColor: m === 'barcode' ? p.brand : p.line }}>
-            <T bold={m === 'barcode'} style={{ fontSize: 13, color: m === 'barcode' ? p.brandInk : p.muted }}>
-              {t.scan.modes[m]}{m === 'barcode' ? '' : ` · ${t.scan.soon}`}
-            </T>
-          </View>
-        ))}
+        {(['barcode', 'label', 'package'] as const).map((m) => {
+          const enabled = m !== 'package';
+          const active = m === mode;
+          return (
+            <Pressable key={m} disabled={!enabled} onPress={() => enabled && setMode(m as 'barcode' | 'label')} accessibilityRole="tab"
+              accessibilityState={{ disabled: !enabled, selected: active }}
+              style={{ flex: 1, borderRadius: 999, paddingVertical: 8, alignItems: 'center',
+                backgroundColor: active ? p.brand : p.card, borderWidth: 1, borderColor: active ? p.brand : p.line }}>
+              <T bold={active} style={{ fontSize: 13, color: active ? p.brandInk : enabled ? p.ink : p.muted }}>
+                {t.scan.modes[m]}{enabled ? '' : ` · ${t.scan.soon}`}
+              </T>
+            </Pressable>
+          );
+        })}
       </View>
 
-      <Card>
+      {mode === 'label' && <Card><LabelCapture /></Card>}
+
+      {mode === 'barcode' && <Card>
         {cameraAvailable && permission?.granted ? (
           <View style={{ height: 260, borderRadius: 12, overflow: 'hidden' }}>
             <CameraView style={{ flex: 1 }} facing="back" barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
@@ -87,7 +96,7 @@ export default function ScanScreen() {
             onPress={() => check(manual.trim().length === 8 ? 'ean8' : 'ean13', manual.trim())} />
         </View>
         {error && <T style={{ color: p.danger }}>{error}</T>}
-      </Card>
+      </Card>}
 
       <Card>
         <TextInput value={query} onChangeText={setQuery} placeholder={t.scan.search} placeholderTextColor={p.muted}

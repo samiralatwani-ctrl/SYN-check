@@ -6,7 +6,11 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @syn/gs1 -w @syn/rules-engine -w @syn/mobile",
-    "method:build": "npm run build:method -w @syn/rules-engine"
+    "test": "node scripts/sync-edge-shared.mjs --check && npm run test -w @syn/gs1 -w @syn/rules-engine -w @syn/label-extraction -w @syn/scan-signals -w @syn/mobile",
+    "method:build": "npm run build:method -w @syn/rules-engine",
+    "edge:sync": "node scripts/sync-edge-shared.mjs"
+  },
+  "devDependencies": {
+    "postgres": "^3.4.7"
   }
 }

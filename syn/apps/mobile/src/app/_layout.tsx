@@ -22,6 +22,7 @@ function Nav() {
         headerTitleStyle: { fontFamily: font.bold }, contentStyle: { backgroundColor: p.bg } }}>
         <Stack.Screen name="index" options={{ title: t.app.name, headerRight: headerLinks }} />
         <Stack.Screen name="result/[id]" options={{ title: t.result.reasons }} />
+        <Stack.Screen name="confirm/[id]" options={{ title: t.label.confirmTitle }} />
         <Stack.Screen name="next-steps/[id]" options={{ title: t.result.whatNow }} />
         <Stack.Screen name="about-method" options={{ title: t.about.title }} />
         <Stack.Screen name="settings" options={{ title: t.tabs.settings }} />

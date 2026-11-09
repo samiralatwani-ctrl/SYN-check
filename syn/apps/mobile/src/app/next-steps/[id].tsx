@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useI18n } from '../../i18n';
-import { getScan } from '../../scan/runScan';
+import { getSession } from '../../scan/session';
 import { Card, Screen } from '../../ui/Screen';
 import { T } from '../../ui/T';
 import { VerdictBadge } from '../../ui/VerdictCard';
@@ -8,8 +8,8 @@ import { VerdictBadge } from '../../ui/VerdictCard';
 export default function NextSteps() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useI18n();
-  const rec = getScan(id);
-  if (!rec) return <Screen><T>—</T></Screen>;
+  const rec = getSession(id);
+  if (!rec?.verdict) return <Screen><T>—</T></Screen>;
   const medical = rec.verdict.annotations.includes('medical_professional_only');
   return (
     <Screen>

@@ -7,7 +7,7 @@ next-env.d.ts
 __pycache__/
 .pytest_cache/
 # Real import files contain seller names and stay out of git (D-018). Put them in data/ locally.
-data/
+/data/
 *.xlsx
 .expo/
 dist/

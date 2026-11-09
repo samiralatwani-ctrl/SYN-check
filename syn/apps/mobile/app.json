@@ -36,6 +36,12 @@
           "cameraPermission": "يستخدم SYN الكاميرا لقراءة الباركود ومقارنة العبوة بالمرجع الرسمي. لا تُرسل الصور دون موافقتك.",
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "يستخدم SYN الصور التي تختارها لقراءة الملصق فقط، ولا يحفظها دون موافقتك."
+        }
       ]
     ],
     "scheme": "syn",

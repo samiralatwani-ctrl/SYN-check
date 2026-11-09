@@ -2,14 +2,16 @@
 import { interpretScan } from '@syn/gs1';
 import { evaluate } from '@syn/rules-engine';
 import { describe, expect, it } from 'vitest';
-import { buildBarcodeScan } from '../src/scan/buildSignals';
-import type { LookupAlert, LookupResult, LookupVariant } from '../src/data/types';
+import { buildScan } from '../src';
+import type { LookupAlert, LookupResult, LookupVariant } from '../src';
 
 const TODAY = '2026-11-09';
 const NOW = new Date(`${TODAY}T00:00:00Z`);
 const run = (sym: Parameters<typeof interpretScan>[0], data: string, lookup: LookupResult | null) => {
   const scan = interpretScan(sym, data, NOW);
-  const ctx = buildBarcodeScan(scan, lookup, TODAY);
+  const known = !!lookup && lookup.variants.length > 0;
+  const ctx = buildScan({ barcode: scan, reference: lookup, identifiedBy: scan.gtin14 && lookup ? 'barcode' : null, today: TODAY });
+  void known;
   return { ...ctx, v: evaluate(ctx.input) };
 };
 const empty = (gtin: string): LookupResult => ({ gtin, variants: [], alerts: [] });
