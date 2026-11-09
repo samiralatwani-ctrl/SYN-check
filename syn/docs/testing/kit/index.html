@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SYN · عدة التجربة</title>
+<style>
+body{margin:0;background:#f4f6f5;font:18px/1.6 Arial,system-ui,sans-serif;color:#14201b}main{max-width:900px;margin:0 auto;padding:20px}
+section{background:#fff;border:1px solid #dfe5e2;border-radius:14px;padding:16px 20px;margin:0 0 20px}
+h1{font-size:24px}h2{font-size:19px;margin:0 0 8px}.expect{color:#0f6b52;font-weight:bold}img{max-width:100%;height:auto;display:block;margin:10px auto}
+.label{margin:10px auto;padding:28px;background:#fff;border:2px solid #333;border-radius:8px;direction:ltr;text-align:left;max-width:640px;font-family:Arial}
+</style></head><body><main>
+<h1>SYN · عدة التجربة على الهاتف</h1>
+<p>افتح هذه الصفحة على شاشة الحاسوب، وامسح منها بالهاتف. اجعل سطوع الشاشة عالياً، وأبعد الهاتف نحو 20 سم.</p>
+
+<section><h2>١. باركود منتج حظرته TİTCK بكل تشغيلاته</h2>
+<img src="ean13_4670220302107.svg" alt="EAN-13 4670220302107">
+<p class="expect">المتوقع: غير مطابق، والسبب "مشمول بإنذار رقابي لكل تشغيلاته"، مع رابط TİTCK.</p></section>
+
+<section><h2>٢. باركود صحيح غير موجود في القاعدة</h2>
+<img src="ean13_5901234123457.svg" alt="EAN-13 5901234123457">
+<p class="expect">المتوقع: غير كافٍ للحكم (معيار قبول المرحلة ٢).</p></section>
+
+<section><h2>٣. ملصق تجريبي (صوّره من وضع "ملصق ومكونات")</h2>
+<div class="label">
+  <div style="color:#b00;font-weight:bold;font-size:18px">TEST SAMPLE — NOT A REAL PRODUCT</div>
+  <div style="font-size:40px;font-weight:bold;margin-top:12px">Juvéderm® ULTRA 4</div>
+  <div style="font-size:20px">Hyaluronic acid 24 mg/ml · Lidocaine 3 mg/ml · 2 x 1 ml</div>
+  <div style="font-size:26px;margin-top:22px;font-family:monospace">LOT 1005654957</div>
+  <div style="font-size:26px;font-family:monospace">MFG 02.2025 &nbsp;&nbsp; EXP 01.2027</div>
+</div>
+<p class="expect">المتوقع: شاشة "تأكد مما قرأناه". بعد التأكيد تظهر النتيجة "غير مطابق" مع "يُستخدم فقط من طبيب مختص". القراءة تستغرق نحو 15 ثانية.</p></section>
+
+<section><h2>٤. إدخال يدوي برقم فحص خاطئ</h2>
+<p>في خانة "أدخل رقم الباركود" اكتب: <b dir="ltr">5901234123458</b></p>
+<p class="expect">المتوقع: غير كافٍ للحكم، والسبب "رقم الفحص في الباركود غير صحيح — أعد المسح".</p></section>
+</main></body></html>

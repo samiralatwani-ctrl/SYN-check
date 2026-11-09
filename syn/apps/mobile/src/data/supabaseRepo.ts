@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';   // supabase-js needs a full URL implementation on React Native
 import { createClient } from '@supabase/supabase-js';
 import type { ExtractionResult } from '@syn/label-extraction';
 import type { ExploreData, LookupResult, NameMatch, Reference, ReferenceRepo, ReportContacts, SaveReportInput, SearchHit } from './types';
